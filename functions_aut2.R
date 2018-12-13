@@ -61,7 +61,7 @@ calcstatpower <- function(ratedpower,windspeed,powercurve,useWA){
     # if wind atlas wind speed correction shall be applied (useWA = 1)
     if(useWA > 0){
       # WIND ATLAS wind speed correction
-      load(paste(dirwindatlas,"/wind_atlas.RData",sep=""))
+      load(paste(dirwindatlas,"/windatlas.RData",sep=""))
       ppWAdistance <- 6378.388*acos(sin(rad*wind_turbines$Lat[i]) * sin(rad*windatlas[,2]) + cos(rad*wind_turbines$Lat[i]) * cos(rad*windatlas[,2]) * cos(rad*windatlas[,1]-rad*wind_turbines$Long[i]))
       
       # find data of nearest station
@@ -70,8 +70,8 @@ calcstatpower <- function(ratedpower,windspeed,powercurve,useWA){
       lat <<- windatlas[pointn,2]
       # get wind speed data of nearest ERA5 point (at 50m height! as wind atlas data)
       lldo <<- distanceorder()
-      windERA50m <- NNdf(50)
-      cf <- as.numeric(windatlas[pointn,3])/mean(windERA50m[,2])
+      windERA100m <- NNdf(100)
+      cf <- as.numeric(windatlas[pointn,3])/mean(windERA100m[,2])
       cfs_mean[[i]] <<- cf
       # adapt mean wind speed
       NNera[,2] <- NNera[,2]*cf

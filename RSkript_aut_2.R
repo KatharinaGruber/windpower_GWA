@@ -24,7 +24,7 @@ library(zoo)
 library(rjson)
 library(stringr)
 library(tidyr)
-
+library(reticulate)
 
 # base directory for simulation
 dirbase <- "C:/Users/KatharinaG/Documents/DOK/IEWT"
@@ -33,7 +33,7 @@ direrabase <- "C:/Users/KatharinaG/Documents/era5/data_aut"
 # directory where era5 data per point are stored
 direra_aut <- "C:/Users/KatharinaG/Documents/era5/data_aut/erapoints"
 # dirwindatlas
-dirwindatlas <- "C:/Users/KatharinaG/Documents/paper_brasilien/windatlas"
+dirwindatlas <- "C:/Users/KatharinaG/Documents/DOK/IEWT/windatlas/aut"
 # directory where observed wind power generation data from ÖMAG are stored
 diromag <- paste0(dirbase,"/wind_power_oemag")
 
@@ -56,13 +56,8 @@ lat1<- 45.5
 lon2<- 18
 lat2<- 50
 
-#########################################################################################################################
-#########################################################################################################################
-#########################################################################################################################
-################ INSERT HERE DOWNLOAD WITH PYTHON #######################################################################
-#########################################################################################################################
-#########################################################################################################################
-#########################################################################################################################
+
+
 
 # split date sequence to several parts so reduce memory requirements
 date_seq<-list(seq(as.POSIXct("2000-01-01",tz="UTC"),as.POSIXct("2005-12-31",tz="UTC"),by="d"),seq(as.POSIXct("2006-01-01",tz="UTC"),as.POSIXct("2011-12-31",tz="UTC"),by="d"),seq(as.POSIXct("2012-01-01",tz="UTC"),as.POSIXct("2017-12-31",tz="UTC"),by="d"))
@@ -233,9 +228,9 @@ windspeed <- c(0:25)
 powercurve <- c(0,0,3,25,82,174,312,532,815,1180,1580,1810,1980,rep(2050,13))
 
 # prepare wind atlas data (for faster loading)
-tif = raster(paste(dirwindatlas,"/wind_atlas_all_clip.tif",sep=""))
+tif = raster(paste(dirwindatlas,"/windatlas.tif",sep=""))
 windatlas <- rasterToPoints(tif)
-save(windatlas,file=paste(dirwindatlas,"/wind_atlas.RData",sep=""))
+save(windatlas,file=paste(dirwindatlas,"/windatlas.RData",sep=""))
 
 # calculate wind atlas corrected wind power generation
 statpower_meanAPT <- calcstatpower(ratedpower,windspeed,powercurve,useWA=1)
