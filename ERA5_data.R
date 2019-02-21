@@ -28,7 +28,6 @@ convertERAFeather<- function(date_seq,pname,pname1) {
   lonlat <- expand.grid(longitude,latitude)
   nc_close(ncfile)
   
-  #res<-sapply(ncfiles,readSingleParam,"T2M",simplify=FALSE)
   res<-sapply(ncfiles,readSingleParam,pname,nlon,nlat,simplify=FALSE)
   df<-bind_rows(res)
   
@@ -65,7 +64,7 @@ readSingleParam<-function(ncfileIn,pname,nlon,nlat){
 }
 
 
-
+# merge era variables from different files into one file
 mergeERAvars <- function(date_seq,pnames,long,lat){
   dir<-paste0(direrabase,"/feather/",paste(pnames,
              format(date_seq[1],"%Y%m%d"),
@@ -82,7 +81,7 @@ mergeERAvars <- function(date_seq,pnames,long,lat){
   return(out)
 }
 
-
+# save era5 data from per-day files to per-point files
 saveERAPoint <- function(lonlat,pnames,date_seq){
   long <- as.vector(unlist(lonlat[1]))
   lat <- as.vector(unlist(lonlat[2]))
@@ -93,7 +92,7 @@ saveERAPoint <- function(lonlat,pnames,date_seq){
   write_feather(eraPoint,paste(dir,"/",as.character(long),"_",as.character(lat),".feather",sep=""))
 }
 
-
+# read era5 data on one point
 getERAPoint <- function(long,lat){
   x <- read_feather(paste(direrabase,"/ERAPoints/",long,"_",lat,".feather",sep=""))
   time <- read_feather(paste(direrabase,"/ERADate.feather",sep=""))
