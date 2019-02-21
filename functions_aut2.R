@@ -5,18 +5,18 @@
 ###remove / correct wrong data points in original file
 remove_erroneous_data<-function(wind_turbines){
   
-  ##zurndorf: Lat/Long vertauscht
-  ##zurndorf: Lat/Long vertauscht
+  ##zurndorf: Lat/Long mixed up
+  ##zurndorf: Lat/Long mixed up
   selector<-wind_turbines$Lat<40
   helper<-wind_turbines[selector,]$Lat
   wind_turbines[selector,]$Lat<-wind_turbines[selector,]$Long
   wind_turbines[selector,]$Long<-helper
   
-  ##nickelsdorf anlage 9: falsch
+  ##nickelsdorf turbine 9: wrong
   selector<-wind_turbines$Long>17.39
   wind_turbines[selector,]$Long<-17+(wind_turbines[selector,]$Long-17)/10
   
-  ##anlagen munderfing 5 und 6 eigenartig
+  ##turbines munderfing 5 and 6 odd
   wind_turbines[wind_turbines$Park=="Munderfing"&wind_turbines$Long>14,]$Long<-
     wind_turbines[wind_turbines$Park=="Munderfing"&wind_turbines$Long>14,]$Long-3.5
   
@@ -32,7 +32,9 @@ remove_erroneous_data<-function(wind_turbines){
 
 
 
-
+# calculate wind power generation per location (wind turbine)
+# ratedpower and height refer to wind turbines, windspeed and powercurve contain the power curve data
+# if useWA is 1, the wind atlas bias correction is performed
 calcstatpower <- function(ratedpower,windspeed,powercurve,useWA){
   # get data of windparks: capacities and start dates and sort by start dates for each location
   load(paste0(dirbase,"/wind_turbines_AUT_complete.RData"))
@@ -68,7 +70,7 @@ calcstatpower <- function(ratedpower,windspeed,powercurve,useWA){
       pointn <- which(ppWAdistance==min(ppWAdistance))
       long <<- windatlas[pointn,1]
       lat <<- windatlas[pointn,2]
-      # get wind speed data of nearest ERA5 point (at 50m height! as wind atlas data)
+      # get wind speed data of nearest ERA5 point (at 100m height! as wind atlas data)
       lldo <<- distanceorder()
       windERA100m <- NNdf(100)
       cf <- as.numeric(windatlas[pointn,3])/mean(windERA100m[,2])
@@ -111,13 +113,10 @@ distanceorder <- function(){
 }
 
 
-
+# nearest neighbour interpolation and extrapolation to hubheight
 NNdf <- function(hubheight=10){
   setwd(direra_aut)
-  ########## 1. Nearest Neighbour ##########
   # first row (nearest neighbour) is extracted
-  # first column of list is taken (distance to station)
-  # and columns 4 to 27, long and lat are excluded
   ERAdf <- getERAPoint(lldo$Longitude[1],lldo$Latitude[1])
   
   # Wind speeds Nearest Neighbor
@@ -135,12 +134,11 @@ NNdf <- function(hubheight=10){
 }
 
 
-#Extrapolation Höhe
-#Höhe in der INMET Daten gemessen werden: 10m
-extrap <- function(MWH1,hIN=10){
-  #alpha friction coefficient
+# Extrapolation Height
+extrap <- function(MWH1,height){
+  # alpha friction coefficient
   alpha <- (log(MWH1[,2])-log(MWH1[,3]))/(log(100)-log(10))
-  #wind speed with power law
-  vext <- MWH1[,2]*(hIN/100)^alpha
+  # wind speed with power law
+  vext <- MWH1[,2]*(height/100)^alpha
   return(vext)
 }
