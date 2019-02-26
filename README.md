@@ -1,6 +1,7 @@
 # windpower_GWA
 scripts for simulating wind power generation from era5 data with Global Wind Atlas bias correction and validation with wind power time series. The results were presented at the IEWT 2019 (Internationale Energiewirtschaftstagung 13.-15.Feb 2019, Vienna)
 https://iewt2019.eeg.tuwien.ac.at/programme_text
+Full Paper: https://iewt2019.eeg.tuwien.ac.at/download/contribution/fullpaper/146/146_fullpaper_20190130_090240.pdf
 
 the files "RSkript_aut_3.R" and "RSkript_bra_3.R" contain the main part of the simulation and analysis, including download
 
