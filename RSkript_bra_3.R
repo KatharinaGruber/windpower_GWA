@@ -1,3 +1,20 @@
+# skript for simulating wind power generation in Brazil
+# and bias-correction with global wind atlas
+# insert desired paths in the beginning (and line 81)
+
+# download daily generation data from http://ons.org.br/Paginas/resultados-da-operacao/historico-da-operacao/geracao_energia.aspx
+# save in dirwindprod
+
+# downlaod global wind atlas data from https://globalwindatlas.info/ or https://irena.masdar.ac.ae/gallery/#map/103 for Brazil
+# and save in separate directory (dirwindatlas) as windatlas.tif
+
+# get installed capacities per subsystem from http://ons.org.br/Paginas/resultados-da-operacao/historico-da-operacao/capacidade_instalada.aspx
+# and store in dircaps
+
+# get wind park data from www.thewindpower.net and store in dirwindparks
+
+# for download of era5 data installation of python and CDS-API (https://cds.climate.copernicus.eu/api-how-to) required
+
 library(lubridate)
 library(tibble)
 library(feather)
@@ -40,12 +57,9 @@ dirwindprod <- "C:/..."
 dircaps <- "C:/..."
 # directory where windparkdata from thewindpower.net are stored
 dirwindparks <- "C:/..."
-# directory where windparkdata from thewindpower.net for selected wind parks are stored
-dirwindparks_sel <- "C:/..."
 
-
-source("C:/.../ERA5_data_bra.R")
-source("C:/.../functions_bra2.R")
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/ERA5_data.R"))
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/functions_bra2.R"))
 
 
 
@@ -64,7 +78,7 @@ import calendar
 import os
 
 # define directory in which data shall be stored
-os.chdir("C:/Users/KatharinaG/Documents/DOK/era5/data_aut")
+os.chdir("C:/Users/KatharinaG/Data/era5/BRA")
 
 c = cdsapi.Client()
 
@@ -425,8 +439,6 @@ ggplot(data=comp_t,aes(x=type,y=wp_GWh)) +
   scale_y_continuous(name="daily wind power generation [GWh]")
 ggsave(paste(dirbase,"/daily_comp_bra.png",sep=""), width = 8, height = 5.5)
 ggsave(paste(dirbase,"/daily_comp_bra_pres.png",sep=""), width = 4, height = 5.3)
-
-
 
 
 

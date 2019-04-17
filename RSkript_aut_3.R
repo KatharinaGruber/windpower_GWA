@@ -1,3 +1,15 @@
+# skript for simulating wind power generation in Austria
+# and bias-correction with global wind atlas
+# insert desired paths in the beginning (and line 73)
+
+# download generation data from https://www.oem-ag.at/de/oekostromneu/winderzeugung/
+# save in diromag
+
+# downlaod global wind atlas data from https://globalwindatlas.info/ or https://irena.masdar.ac.ae/gallery/#map/103 for Austria
+# and save in separate directory (dirwindatlas) as windatlas.tif
+
+# for download of era5 data installation of python and CDS-API (https://cds.climate.copernicus.eu/api-how-to) required
+
 library(lubridate)
 library(tibble)
 library(feather)
@@ -38,8 +50,8 @@ dirwindatlas <- "C:/..."
 diromag <- paste0(dirbase,"/wind_power_oemag")
 
 
-source("C:/.../ERA5_data.R")
-source("C:/.../functions_aut2.R")
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/ERA5_data.R"))
+source(paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/functions_aut2.R"))
 
 
 
@@ -58,7 +70,7 @@ import calendar
 import os
 
 # define directory in which data shall be stored
-os.chdir("C:/Users/KatharinaG/Documents/DOK/era5/data_aut")
+os.chdir("C:/Users/KatharinaG/Data/era5/AUT")
 
 c = cdsapi.Client()
 
@@ -381,7 +393,7 @@ for(i in c(1:length(files))){
     prody <- as.numeric(unlist(file1[-c(1:3),4]))
   }
   
-  time <- rep(seq(as.POSIXct(paste0(years[i],"-01-01 00:00:00",tz="UTC")),as.POSIXct(paste0(years[i],"-12-31 23:00:00",tz="UTC")),by="h"),each=4)
+  time <- rep(seq(as.POSIXct(paste0(years[i],"-01-01 00:00:00"),tz="UTC"),as.POSIXct(paste0(years[i],"-12-31 23:00:00"),tz="UTC"),by="h"),each=4)
   prod_h <- aggregate(prody,by=list(time),sum)
   if(i == 1){
     prod_omag <- prod_h
@@ -435,5 +447,4 @@ ggplot(data=comp_t,aes(x=type,y=wp_GWh)) +
   scale_y_continuous(name="daily wind power generation [GWh]")
 ggsave(paste(dirbase,"/daily_comp_aut.png",sep=""), width = 8, height = 5.5)
 ggsave(paste(dirbase,"/daily_comp_aut_pres.png",sep=""), width = 4, height = 5.3)
-
 
