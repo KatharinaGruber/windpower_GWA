@@ -123,7 +123,8 @@ def _cdsapi_download_with_timeout(self, url, size, target):
     finally:
         r.close()
 
-    assert total == size
+    if total != size:
+        raise Exception("Download failed: downloaded %s byte(s) out of %s" % (total, size))
 
     elapsed = time.time() - start
     if elapsed:
@@ -160,11 +161,16 @@ def patch_cdsapi():
     import inspect
     import hashlib
     cdsapi_src = inspect.getsource(cdsapi.api).encode('utf-8')
-    expected_md5 = '1e93fc6bbd1cc825a10845f47c59835f'
+
+    # add md5 hashes if you know that the version can be safely monkey patched:
+    expected_md5s = ('1e93fc6bbd1cc825a10845f47c59835f',
+                     '3a96092ca74d684a26615958e8297c4f')
+
     cdsapi_md5 = hashlib.md5(cdsapi_src).hexdigest()
-    if cdsapi_md5 != expected_md5:
-        raise RuntimeError("Could not patch cdsapi, md5sum of api.py"
-                           f"has changed. {cdsapi_md5}")
+    if cdsapi_md5 not in expected_md5s:
+        logging.warning("Could not patch cdsapi, unexpected md5sum of "
+                        f"api.py: {cdsapi_md5}")
+        return
 
     cdsapi.api.Result._download = _cdsapi_download_with_timeout
 
