@@ -154,3 +154,18 @@ distanceorder <- function(){
   lonlatdistao <- lonlatdistao[order(lonlatdistao[,3]),]
   return(lonlatdistao)
 }
+
+getSTATEproddaily <- function(staten){
+  states <- c("Bahia","Ceará","Paraíba","Paraná","Pernambuco","Piaui","RiodeJaneiro","RioGrandedoNorte","RioGrandedoSul","SantaCatarina","Sergipe")
+  files <- gsub(".csv","",list.files(path=dirwindproddaily))
+  if(!is.na(match(states[staten],files))){
+    STATEprod <- read.table(paste(dirwindproddaily,"/",states[staten],".csv",sep=""),sep=";",header=T,stringsAsFactors=F)
+    # first row is useless
+    STATEprod <- STATEprod[2:length(STATEprod[,1]),]
+    # extract yearmonth and generation in GWh
+    STATEprod <- data.frame(date=as.numeric(as.vector(paste(substr(STATEprod[,1],7,10),substr(STATEprod[,1],4,5),substr(STATEprod[,1],1,2),sep=""))),prod_GWh=as.numeric(gsub(",",".",STATEprod[,8],fixed=T)))
+    return(STATEprod)
+  }else{
+    return(NULL)
+  }
+}
