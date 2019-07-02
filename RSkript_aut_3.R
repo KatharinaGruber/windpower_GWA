@@ -1,15 +1,3 @@
-# skript for simulating wind power generation in Austria
-# and bias-correction with global wind atlas
-# insert desired paths in the beginning (and line 73)
-
-# download generation data from https://www.oem-ag.at/de/oekostromneu/winderzeugung/
-# save in diromag
-
-# downlaod global wind atlas data from https://globalwindatlas.info/ or https://irena.masdar.ac.ae/gallery/#map/103 for Austria
-# and save in separate directory (dirwindatlas) as windatlas.tif
-
-# for download of era5 data installation of python and CDS-API (https://cds.climate.copernicus.eu/api-how-to) required
-
 library(lubridate)
 library(tibble)
 library(feather)
@@ -48,10 +36,12 @@ direra_aut <- "C:/..."
 dirwindatlas <- "C:/..."
 # directory where observed wind power generation data from ÖMAG are stored
 diromag <- paste0(dirbase,"/wind_power_oemag")
+# directory for new results
+dirresults <- "C:/..."
 
 
-source(paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/ERA5_data.R"))
-source(paste0(dirname(rstudioapi::getSourceEditorContext()$path),"/functions_aut2.R"))
+source("C:/.../ERA5_data.R")
+source("C:/.../functions_aut2.R")
 
 
 
@@ -70,7 +60,7 @@ import calendar
 import os
 
 # define directory in which data shall be stored
-os.chdir("C:/Users/KatharinaG/Data/era5/AUT")
+os.chdir("C:/Users/KatharinaG/Data/era5/data_aut")
 
 c = cdsapi.Client()
 
@@ -447,4 +437,174 @@ ggplot(data=comp_t,aes(x=type,y=wp_GWh)) +
   scale_y_continuous(name="daily wind power generation [GWh]")
 ggsave(paste(dirbase,"/daily_comp_aut.png",sep=""), width = 8, height = 5.5)
 ggsave(paste(dirbase,"/daily_comp_aut_pres.png",sep=""), width = 4, height = 5.3)
+
+
+
+
+
+
+
+
+
+###################################################################################################
+# hourly results
+###################################################################################################
+
+# ERA
+load(paste0(dirbase,"/results/wp_austria.RData"))
+wpaut_all = wpaut
+names(wpaut_all) = c('time','ERA')
+wpaut_all$ERA_GWA = wpaut_meanAPT$wp_kwh
+# MERRA
+load(paste0(dirbase,"/results/merra/wp_austria.RData"))
+wpaut_all$MERRA = wpaut$wp_kwh
+wpaut_all$MERRA_GWA = wpaut_meanAPT$wp_kwh
+
+# kWh -> MWh, correct for capacity
+wpaut_all[,2:5] <- wpaut_all[,2:5]/10^3*cf_caps
+
+# add production data
+wpaut_all$obs = prod_omag[,2]
+
+
+
+# calculate statistics
+stats_h <- data.frame(type=c("RMSE","MBE"),ERA5=NA,ERA5_GWA=NA,MERRA2=NA,MERRA2_GWA=NA)
+# RMSE
+stats_h[1,2:5] <- c(rmse(wpaut_all$ERA,wpaut_all$obs),
+                    rmse(wpaut_all$ERA_GWA,wpaut_all$obs),
+                    rmse(wpaut_all$MERRA,wpaut_all$obs),
+                    rmse(wpaut_all$MERRA_GWA,wpaut_all$obs))
+#MBE
+stats_h[2,2:5] <- c(mean(wpaut_all$ERA-wpaut_all$obs),
+                    mean(wpaut_all$ERA_GWA-wpaut_all$obs),
+                    mean(wpaut_all$MERRA-wpaut_all$obs),
+                    mean(wpaut_all$MERRA_GWA-wpaut_all$obs))
+
+
+write.table(stats_h,file=paste0(dirresults,"/stats_AUT_h_abs.csv"),sep=";")
+
+
+
+
+###################################################################################################
+# mean capacity
+###################################################################################################
+
+load(paste0(dirbase,"/wind_turbines_AUT_complete.RData"))
+cap = data.frame(com = wind_turbines$comdate,
+                 cap = wind_turbines$KW)
+cap = cap[order(cap$com),]
+cap2 = aggregate(cap$cap,by=list(cap$com),sum)
+names(cap2) = c('com','cap')
+
+cap2$cumcap = cumsum(cap2$cap)
+
+cap3 = data.frame(time = wpaut_all$time,
+                  cap = NA)
+cap3$cap[match(cap2$com,cap3$time)] = cap2$cumcap
+cap3$cap = na.locf(cap3$cap)*cf_caps/10^3
+
+meancap = mean(cap3$cap)
+
+
+
+########################
+# relative results hourly
+
+stats_hr = stats_h
+stats_hr[,2:5] = round(stats_h[,2:5]/meancap*100,1)
+
+write.table(stats_hr,paste0(dirresults,file="/stats_AUT_h_rel.csv"),sep=";")
+
+
+
+###################################################################################################
+# daily results
+###################################################################################################
+
+ind = format(wpaut_all$time,"%Y%m%d")
+
+wpaut_alld = data.frame(time = rle(ind)$values,
+                        ERA = aggregate(wpaut_all$ERA,by=list(ind),sum)[,2],
+                        ERA_GWA = aggregate(wpaut_all$ERA_GWA,by=list(ind),sum)[,2],
+                        MERRA = aggregate(wpaut_all$MERRA,by=list(ind),sum)[,2],
+                        MERRA_GWA = aggregate(wpaut_all$MERRA_GWA,by=list(ind),sum)[,2],
+                        obs = aggregate(wpaut_all$obs,by=list(ind),sum)[,2])
+
+# MWh -> GWh
+wpaut_alld[,2:6] <- wpaut_alld[,2:6]/10^3
+
+# calculate statistics
+stats_d <- data.frame(type=c("RMSE","MBE"),ERA5=NA,ERA5_GWA=NA,MERRA2=NA,MERRA2_GWA=NA)
+# RMSE
+stats_d[1,2:5] <- c(rmse(wpaut_alld$ERA,wpaut_alld$obs),
+                    rmse(wpaut_alld$ERA_GWA,wpaut_alld$obs),
+                    rmse(wpaut_alld$MERRA,wpaut_alld$obs),
+                    rmse(wpaut_alld$MERRA_GWA,wpaut_alld$obs))
+#MBE
+stats_d[2,2:5] <- c(mean(wpaut_alld$ERA-wpaut_alld$obs),
+                    mean(wpaut_alld$ERA_GWA-wpaut_alld$obs),
+                    mean(wpaut_alld$MERRA-wpaut_alld$obs),
+                    mean(wpaut_alld$MERRA_GWA-wpaut_alld$obs))
+
+
+write.table(stats_d,file=pate0(dirresults,"/stats_AUT_d_abs.csv"),sep=";")
+
+########################
+# relative results daily
+
+stats_dr = stats_d
+stats_dr[,2:5] = round(stats_d[,2:5]/(meancap/1000*24)*100,1)
+
+write.table(stats_dr,file=paste0(dirresults,"/stats_AUT_d_rel.csv"),sep=";")
+
+
+
+
+###################################################################################################
+# monthly results
+###################################################################################################
+
+ind = format(wpaut_all$time,"%Y%m")
+
+wpaut_allm = data.frame(time = rle(ind)$values,
+                        ERA = aggregate(wpaut_all$ERA,by=list(ind),sum)[,2],
+                        ERA_GWA = aggregate(wpaut_all$ERA_GWA,by=list(ind),sum)[,2],
+                        MERRA = aggregate(wpaut_all$MERRA,by=list(ind),sum)[,2],
+                        MERRA_GWA = aggregate(wpaut_all$MERRA_GWA,by=list(ind),sum)[,2],
+                        obs = aggregate(wpaut_all$obs,by=list(ind),sum)[,2])
+
+# MWh -> GWh
+wpaut_allm[,2:6] <- wpaut_allm[,2:6]/10^3
+
+# calculate statistics
+stats_m <- data.frame(type=c("RMSE","MBE"),ERA5=NA,ERA5_GWA=NA,MERRA2=NA,MERRA2_GWA=NA)
+# RMSE
+stats_m[1,2:5] <- c(rmse(wpaut_allm$ERA,wpaut_allm$obs),
+                    rmse(wpaut_allm$ERA_GWA,wpaut_allm$obs),
+                    rmse(wpaut_allm$MERRA,wpaut_allm$obs),
+                    rmse(wpaut_allm$MERRA_GWA,wpaut_allm$obs))
+#MBE
+stats_m[2,2:5] <- c(mean(wpaut_allm$ERA-wpaut_allm$obs),
+                    mean(wpaut_allm$ERA_GWA-wpaut_allm$obs),
+                    mean(wpaut_allm$MERRA-wpaut_allm$obs),
+                    mean(wpaut_allm$MERRA_GWA-wpaut_allm$obs))
+
+
+write.table(stats_m,file=paste0(dirresults,"/stats_AUT_m_abs.csv"),sep=";")
+
+########################
+# relative results monthly
+
+stats_mr = stats_m
+stats_mr[,2:5] = round(stats_m[,2:5]/(meancap/1000*24*30)*100,1)
+
+write.table(stats_mr,file=paste0(dirresults,"/stats_AUT_m_rel.csv"),sep=";")
+
+
+
+
+
+
 
