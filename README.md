@@ -18,9 +18,7 @@ Link to ICEM abstract: http://icem2019-abstract-submission.p.wemc.currinda.com/d
 Link to presentation: doi.org/10.13140/RG.2.2.14639.79520
 Version: https://github.com/KatharinaGruber/windpower_GWA/tree/icem
 
-Note that there are two issues:
-1. Two different resolutions are used in the GWA as it was updated in the meantime: 1km for Austria and Brazil and 250m for South Africa and USA
-2. For the simulation in the USA the disph was not taken account of for MERRA-2
+Note that there is an issue: Two different resolutions are used in the GWA as it was updated in the meantime: 1km for Austria and Brazil and 250m for South Africa and USA
 
 Simulation for Austria and Brazil is done in R:
 

@@ -90,10 +90,9 @@ def windpower_simulation_merra2(winduvh,hubheight,capacity,lons,lats,commissioni
 	# wind in 100m height calculated from u and v component
 	windh50 = (wind.V50M**2+wind.U50M**2)**0.5
 	# calculate alpha friction coefficient
-	alpha = (xr.ufuncs.log(windh50/windh10)/np.log(50/10)))
-	alpha = (xr.ufuncs.log(windh50/windh10)/np.log(50/10)))
+	alpha = (xr.ufuncs.log(windh50/windh10)/np.log(50/(10+wind.DISPH)))
 	# calculate wind at hubheight using alpha
-	windhh = windh10 * (hubheight/10)**alpha
+	windhh = windh50 * (hubheight/50)**alpha
 	
 	# apply GWA bias correction
 	if(len(GWA)>0):
