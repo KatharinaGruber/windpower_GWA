@@ -16,7 +16,9 @@ Version: https://github.com/KatharinaGruber/windpower_GWA/tree/egu2019
 These results complemented with results from the USA were presented at ICEM 2019 (6th International Conference Energy & Meteorology 24. - 27. Jun 2019, Copenhagen).
 Link to ICEM abstract: http://icem2019-abstract-submission.p.wemc.currinda.com/days/2019-06-27/abstract/655
 Link to presentation: doi.org/10.13140/RG.2.2.14639.79520
-
+Note that there are two issues:
+1. Two different resolutions are used in the GWA as it was updated in the meantime: 1km for Austria and Brazil and 250m for South Africa and USA
+2. For the simulation in the USA the disph was not taken account of for MERRA-2
 
 Simulation for Austria and Brazil is done in R:
 
