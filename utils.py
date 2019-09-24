@@ -1,8 +1,11 @@
 import xarray as xr
 import numpy as np
 from scipy.interpolate import interp1d
+import pandas as pd
 
-def windpower_simulation_era5(winduvh,hubheight,capacity,lons,lats,commissioning,GWA=[]):
+ryberg_path = "/data/users/kgruber/other-data"
+
+def windpower_simulation_era5(winduvh,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
 	'''
 	function for simulating wind power generation
 	
@@ -40,23 +43,22 @@ def windpower_simulation_era5(winduvh,hubheight,capacity,lons,lats,commissioning
 		# apply correction factor
 		windhh = windhh * cf_GWA
 	
-	# replace wind speeds higher than 25 m/s with 25, because maximum of power curve
-	windhh = windhh.where(windhh<=25,25)
+	# replace wind speeds higher than 25 m/s with 0, because cutout windspeed
+	windhh = windhh.where(windhh<=25,0)
 	
-	# Enercon E-82 power curve
-	wind_speeds = (np.arange(0, 26, step=1.0))
-	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
-	
-	power_curve = interp1d(wind_speeds, generation_kw)
-	
-	wp1 = xr.apply_ufunc(power_curve, windhh,
-                     dask='parallelized',
-                     output_dtypes=[np.float64])
-	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-	cap = list(capacity/2000.0)
+	# Ryberg power curve model
+	RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
+	A = xr.DataArray(RybCoeff.A, dims = 'CF')
+	B = xr.DataArray(RybCoeff.B, dims = 'CF')
+	ignore_dims = [[], [], ['CF'], ['CF']]
+	wp1 = xr.apply_ufunc(power_curve,windhh,specific_pow,A,B,
+                         input_core_dims = ignore_dims,
+                         dask = 'parallelized',
+                         output_dtypes = [np.float64],
+                         vectorize = True)
+
 	# multiply with installed capacity
-	wp2 = cap*wp1
-	
+	wp2 = capacity*wp1
 	
 	# make wind power generation start at commissioning date
 	if(len(GWA)>0):
@@ -66,8 +68,19 @@ def windpower_simulation_era5(winduvh,hubheight,capacity,lons,lats,commissioning
 	
 	return(wp3)
 
+
+# function for calculating power output with Ryberg model
+# wind: wind speeds over time at one location
+# spec_pow: specific power (W/m^2) for that turbine/park/location
+# A, B: coefficients of Ryberg model
+def power_curve(wind,spec_pow,A,B):
+    v = [0] + list(np.exp(A+B*np.log(spec_pow))) + [25]
+    CF = [0] + list(range(101)) + [100]
+    PC = interp1d(v, CF)
+    return(PC(wind))
+
 	
-def windpower_simulation_merra2(winduvh,hubheight,capacity,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_merra2(winduvh,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
 	'''
 	function for simulating wind power generation
 	
@@ -108,19 +121,19 @@ def windpower_simulation_merra2(winduvh,hubheight,capacity,lons,lats,commissioni
 	# replace wind speeds higher than 25 m/s with 25, because maximum of power curve
 	windhh = windhh.where(windhh<=25,25)
 	
-	# Enercon E-82 power curve
-	wind_speeds = (np.arange(0, 26, step=1.0))
-	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
-	
-	power_curve = interp1d(wind_speeds, generation_kw)
-	
-	wp1 = xr.apply_ufunc(power_curve, windhh,
-                     dask='parallelized',
-                     output_dtypes=[np.float64])
-	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-	cap = list(capacity/2000.0)
+	# Ryberg power curve model
+	RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
+	A = xr.DataArray(RybCoeff.A, dims = 'CF')
+	B = xr.DataArray(RybCoeff.B, dims = 'CF')
+	ignore_dims = [[], [], ['CF'], ['CF']]
+	wp1 = xr.apply_ufunc(power_curve,windhh,specific_pow,A,B,
+                         input_core_dims = ignore_dims,
+                         dask = 'parallelized',
+                         output_dtypes = [np.float64],
+                         vectorize = True)
+
 	# multiply with installed capacity
-	wp2 = cap*wp1
+	wp2 = capacity*wp1
 	
 	
 	# make wind power generation start at commissioning date
