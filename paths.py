@@ -1,0 +1,1 @@
+ryberg_path = "C:/Users/KatharinaG/paper_countries/other-data"

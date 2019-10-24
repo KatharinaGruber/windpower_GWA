@@ -16,8 +16,9 @@ import cdsapi
 
 from logging_config import setup_logging
 
+from paths_usa import era_path
 
-DOWNLOAD_DIR = "C:/Users/KatharinaG/Data/era5/USA"
+DOWNLOAD_DIR = era_path
 
 YEARS = range(2000, 2019)
 MONTHS = list(range(1, 13))

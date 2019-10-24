@@ -1,0 +1,5 @@
+usa_path = "C:/Users/KatharinaG/paper_countries/other-data/USA"
+results_path = "C:/Users/KatharinaG/paper_countries/results/USA"
+mer_path = "C:/Users/KatharinaG/Data/MERRA/USA"
+era_path = "C:/Users/KatharinaG/Data/era5/USA"
+#ryberg_path = "C:/Users/KatharinaG/paper_countries/other-data"
