@@ -84,7 +84,8 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
     if ofile not in glob.glob(results_path + "/*"):
         BPA_mer_gwa = pBPA.groupby(labels.lbl_mer_gwa).mean()
         wp_loc_mer_gwa = xr.open_mfdataset(results_path+"/windpower_??_MERRA2_GWA.nc")
-        wp_BPA_mer_gwa = (wp_loc_mer_gwa * np.array(BPA_mer_gwa.p)).sum('location')
+        shares = xr.DataArray(BPA_mer_gwa.p[BPA_mer_gwa.p>0].values,dims = 'location',coords = {'location':range(sum(BPA_mer_gwa.p>0))})
+        wp_BPA_mer_gwa = (wp_loc_mer_gwa.isel(location = np.where(BPA_mer_gwa.p.values > 0)[0]).assign_coords(location = range(len(shares))) * shares).sum('location')
         wp_BPA_mer_gwa.to_netcdf(ofile)
         del(BPA_mer_gwa,wp_loc_mer_gwa,wp_BPA_mer_gwa)
     
@@ -102,7 +103,8 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
     if ofile not in glob.glob(results_path + "/*"):
         BPA_era_gwa = pBPA.groupby(labels.lbl_era_gwa).mean()
         wp_loc_era_gwa = xr.open_mfdataset(results_path+"/windpower_??_ERA5_GWA.nc")
-        wp_BPA_era_gwa = (wp_loc_era_gwa * np.array(BPA_era_gwa.p)).sum('location')
+        shares = xr.DataArray(BPA_era_gwa.p[BPA_era_gwa.p>0].values,dims = 'location',coords = {'location':range(sum(BPA_era_gwa.p>0))})
+        wp_BPA_era_gwa = (wp_loc_era_gwa.isel(location = np.where(BPA_era_gwa.p.values > 0)[0]).assign_coords(location = range(len(shares))) * shares).sum('location')
         wp_BPA_era_gwa.to_netcdf(ofile)
         del(BPA_era_gwa,wp_loc_era_gwa,wp_BPA_era_gwa)
         
