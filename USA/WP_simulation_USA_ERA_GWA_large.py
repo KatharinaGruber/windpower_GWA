@@ -57,7 +57,7 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
         outfile_temp = results_path + "/wp_"+state+"_ERA5_GWA_temp" + str(it+1) +".nc"
         if i2 > dat_len:
             i2 = dat_len
-        if outfile_temp not in glob.glob(results_path + "/wp_"+state+"_ERA5_GWA_temp?.nc"):
+        if outfile_temp not in glob.glob(results_path + "/wp_"+state+"_ERA5_GWA_temp*.nc"):
             wps = windpower_simulation_era5_large(wind.wh100,
                                                   alpha.alpha,
                                                   turbine_data_era_gwa.height[ind].values[i1:i2],
@@ -78,12 +78,12 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
         print(round(i1/dat_len,3)*100,'% done in ',state)
         
     # merge  and delete temporary files
-    wps = xr.open_mfdataset(results_path + "/wp_"+state+"_ERA5_GWA_temp?.nc")
-    wps.to_netcdf(results_path + "/windpower_"+state+"_ERA5_GWA.nc")
+    wps = xr.open_mfdataset(results_path + "/wp_"+state+"_ERA5_GWA_temp*.nc", chunks = {'time': 100})
+    wps.drop(['x','y']).to_netcdf(results_path + "/windpower_"+state+"_ERA5_GWA.nc")
     t2 = time.time()
     
     # remove temporary files
-    for file in glob.glob(results_path + "/wp_"+state+"_ERA5_GWA_temp?.nc"):
+    for file in glob.glob(results_path + "/wp_"+state+"_ERA5_GWA_temp*.nc"):
         os.remove(file)
 
 
