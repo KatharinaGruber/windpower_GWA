@@ -58,6 +58,8 @@ if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:
 
 
 # sum up BPA
+# the shares actually would depend on the turbine capacity too, but in this case,
+# turbines with the same specific power (and thus same label) also have the same capacity
 if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
     print("summing up BPA...")
 
@@ -155,7 +157,7 @@ if len(glob.glob(results_path + "/windpower_USA_*.nc")) < 4:
     if ofile not in glob.glob(results_path + "/*"):
         wp_state = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc")
         wpUSA = wp_state.sum('state')
-        wpUSA.to_netcdf()
+        wpUSA.to_netcdf(ofile)
 
     # MERRA2 + GWA
     ofile = results_path+"/windpower_USA_MERRA2_GWA.nc"
