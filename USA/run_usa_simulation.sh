@@ -18,3 +18,5 @@ do
 done
 
 python sum_up_regions.py
+
+python WP_simulation_USA_Analysis.py
