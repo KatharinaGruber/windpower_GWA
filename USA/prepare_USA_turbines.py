@@ -59,6 +59,7 @@ turbine_data = turbine_data.drop('GU',axis=0,level=0)
 # add index
 turbine_data['ind'] = range(turbine_data.shape[0])
 
+turbine_data.to_csv(usa_path + "/turbine_data.csv")
 
 # MERRA data preparation
 ##########################
