@@ -1,1 +1,1 @@
-ryberg_path = "C:/Users/KatharinaG/paper_countries/other-data"
+ryberg_path = "/data/users/kgruber/other-data"
