@@ -7,12 +7,14 @@ Created on Mon Apr 29 09:00:37 2019
 adapted from source:
 https://github.com/inwe-boku/wind_repower_usa/blob/master/scripts/download_wind_era5.py
 """
-
+import glob
 import os
 import os.path as op
 import logging
 
 import cdsapi
+import sys
+sys.path.append('../')
 
 from logging_config import setup_logging
 
@@ -39,55 +41,54 @@ def main():
     # Format for downloading ERA5: North/West/South/East
     bounding_box = "{}/{}/{}/{}".format(north, west, south, east)
 
-    # old data downloaded with:  "68/-172/16/-61"
-
     logging.info("Downloading bounding_box=%s for years=%s and months=%s",
                  bounding_box, YEARS, MONTHS)
 
     c = cdsapi.Client()
+    
+    if len(glob.glob(DOWNLOAD_DIR + '/era5_wind_USA_*.nc')) < 20*12:
+        for year in YEARS:
+            for month in MONTHS:
+                filename = op.join(DOWNLOAD_DIR,
+                                   f'era5_wind_USA_{year}{month:02d}.nc')
 
-    for year in YEARS:
-        for month in MONTHS:
-            filename = op.join(DOWNLOAD_DIR,
-                               f'era5_wind_USA_{year}{month:02d}.nc')
+                if op.exists(filename):
+                    logging.info(f"Skipping {filename}, already exists!")
+                    continue
 
-            if op.exists(filename):
-                logging.info(f"Skipping {filename}, already exists!")
-                continue
+                logging.info(f"Starting download of {filename}...")
 
-            logging.info(f"Starting download of {filename}...")
-
-            for i in range(5):
-                try:
-                    c.retrieve(
-                        'reanalysis-era5-single-levels',
-                        {
-                            'product_type': 'reanalysis',
-                            'format': 'netcdf',
-                            'variable': [
-                                '100m_u_component_of_wind',
-                                '100m_v_component_of_wind',
-                                '10m_u_component_of_wind',
-                                '10m_v_component_of_wind'
-                            ],
-                            'year': f'{year}',
-                            'month': [
-                                f'{month:02d}'
-                            ],
-                            'area': bounding_box,
-                            'day': [f"{day:02d}" for day in range(1, 32)],
-                            'time': [f"{hour:02d}:00" for hour in range(24)],
-                        },
-                        f"{filename}.part"
-                    )
-                except Exception as e:
-                    logging.warning("Download failed: %s", e)
+                for i in range(5):
+                    try:
+                        c.retrieve(
+                            'reanalysis-era5-single-levels',
+                            {
+                                'product_type': 'reanalysis',
+                                'format': 'netcdf',
+                                'variable': [
+                                    '100m_u_component_of_wind',
+                                    '100m_v_component_of_wind',
+                                    '10m_u_component_of_wind',
+                                    '10m_v_component_of_wind'
+                                ],
+                                'year': f'{year}',
+                                'month': [
+                                    f'{month:02d}'
+                                ],
+                                'area': bounding_box,
+                                'day': [f"{day:02d}" for day in range(1, 32)],
+                                'time': [f"{hour:02d}:00" for hour in range(24)],
+                            },
+                            f"{filename}.part"
+                        )
+                    except Exception as e:
+                        logging.warning("Download failed: %s", e)
+                    else:
+                        logging.info(f"Download of {filename} successful!")
+                        os.rename(f"{filename}.part", filename)
+                        break
                 else:
-                    logging.info(f"Download of {filename} successful!")
-                    os.rename(f"{filename}.part", filename)
-                    break
-            else:
-                logging.warning("Download failed permanently!")
+                    logging.warning("Download failed permanently!")
 
 
 def _cdsapi_download_with_timeout(self, url, size, target):
