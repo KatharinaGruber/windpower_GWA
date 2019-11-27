@@ -31,15 +31,17 @@ ProgressBar().register()
 from paths_usa import *
 
 os.chdir(script_path)
-'''
+
 os.system('python sim_oneyear.py -year 2018')
 os.system('python sim_oneyear.py -year 2017')
 os.system('python sim_oneyear.py -year 2011')
 os.system('python sim_oneyear.py -year 2010')
-'''
+
 os.system('python cor_oneyear.py -year 2018')
 os.system('python cor_oneyear.py -year 2017')
 os.system('python cor_oneyear.py -year 2011')
 os.system('python cor_oneyear.py -year 2010')
 
-
+os.system('python cor_timespan.py -year1 2017 -year2 2018')
+os.system('python cor_timespan.py -year1 2010 -year2 2011')
+os.system('python cor_timespan.py -year1 2010 -year2 2018')
