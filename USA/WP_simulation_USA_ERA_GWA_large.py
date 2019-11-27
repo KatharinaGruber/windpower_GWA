@@ -42,7 +42,7 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
     alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc")
     # with GWA
     turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
-    GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA100m.tif')
+    GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA100m.tif')
     ind = turbine_data_era_gwa.state == state
 
     print('calculating ERA5 ' + state + ' GWA')
