@@ -71,6 +71,9 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
     labels = pd.read_csv(usa_path + '/labels_turbine_data.csv')
     # get indices of BPA wind parks from wind turbine dataset
     pBPA = pd.DataFrame({'p': [park in BPA_parks.name.values for park in windturbines[windturbines.t_state!='GU'].p_name.values]})
+    # remove turbines that are in other states - error in data?
+    pBPA[windturbines[windturbines.t_state!='GU'].xlong.values<-125] = False
+    pBPA[windturbines[windturbines.t_state!='GU'].xlong.values>-115] = False
 
     # MERRA2
     ofile = results_path + "/windpower_BPA_MERRA2.nc"
