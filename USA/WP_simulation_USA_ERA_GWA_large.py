@@ -62,7 +62,6 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
                                                   alpha.alpha,
                                                   turbine_data_era_gwa.height[ind].values[i1:i2],
                                                   turbine_data_era_gwa.capacity[ind].values[i1:i2],
-                                                  turbine_data_era_gwa.sp[ind].values[i1:i2],
                                                   turbine_data_era_gwa.lon[ind].values[i1:i2],
                                                   turbine_data_era_gwa.lat[ind].values[i1:i2],
                                                   turbine_data_era_gwa.commissioning[ind].values[i1:i2],

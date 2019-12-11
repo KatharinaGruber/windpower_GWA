@@ -45,18 +45,18 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,lons,lats,commis
         windhhg = windhh.where(windhh<=25,0)
     
     # Enercon E-82 power curve
-	wind_speeds = (np.arange(0, 26, step=1.0))
-	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
-	
-	power_curve = interp1d(wind_speeds, generation_kw)
-	
-	wp1 = xr.apply_ufunc(power_curve, windhh,
+    wind_speeds = (np.arange(0, 26, step=1.0))
+    generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+    
+    power_curve = interp1d(wind_speeds, generation_kw)
+    
+    wp1 = xr.apply_ufunc(power_curve, windhhg,
                      dask='parallelized',
                      output_dtypes=[np.float64])
-	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-	cap = list(capacity/2000.0)
-	# multiply with installed capacity
-	wp2 = cap*wp1
+    # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+    cap = list(capacity/2000.0)
+    # multiply with installed capacity
+    wp2 = cap*wp1
     
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
@@ -66,7 +66,9 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,lons,lats,commis
     
     return(wp3)
 
+def power_curve():
 
+    return(0)
 
 
     
@@ -110,18 +112,18 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,lons,lats,commi
         windhhg = windhh.where(windhh<=25,0)
     
     # Enercon E-82 power curve
-	wind_speeds = (np.arange(0, 26, step=1.0))
-	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
-	
-	power_curve = interp1d(wind_speeds, generation_kw)
-	
-	wp1 = xr.apply_ufunc(power_curve, windhh,
+    wind_speeds = (np.arange(0, 26, step=1.0))
+    generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+    
+    power_curve = interp1d(wind_speeds, generation_kw)
+    
+    wp1 = xr.apply_ufunc(power_curve, windhhg,
                      dask='parallelized',
                      output_dtypes=[np.float64])
-	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-	cap = list(capacity/2000.0)
-	# multiply with installed capacity
-	wp2 = cap*wp1
+    # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+    cap = list(capacity/2000.0)
+    # multiply with installed capacity
+    wp2 = cap*wp1
     
     
     # make wind power generation start at commissioning date
@@ -189,18 +191,18 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,lons,lats,
         windhhg = windhh.where(windhh<=25,0)
 
     # Enercon E-82 power curve
-	wind_speeds = (np.arange(0, 26, step=1.0))
-	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
-	
-	power_curve = interp1d(wind_speeds, generation_kw)
-	
-	wp1 = xr.apply_ufunc(power_curve, windhh,
+    wind_speeds = (np.arange(0, 26, step=1.0))
+    generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+    
+    power_curve = interp1d(wind_speeds, generation_kw)
+    
+    wp1 = xr.apply_ufunc(power_curve, windhhg,
                      dask='parallelized',
                      output_dtypes=[np.float64])
-	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-	cap = list(capacity/2000.0)
-	# multiply with installed capacity
-	wp2 = cap*wp1
+    # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+    cap = list(capacity/2000.0)
+    # multiply with installed capacity
+    wp2 = cap*wp1
 
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
@@ -236,18 +238,18 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,lons,lats
         windhhg = windhh.where(windhh<=25,0)
 
     # Enercon E-82 power curve
-	wind_speeds = (np.arange(0, 26, step=1.0))
-	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
-	
-	power_curve = interp1d(wind_speeds, generation_kw)
-	
-	wp1 = xr.apply_ufunc(power_curve, windhh,
+    wind_speeds = (np.arange(0, 26, step=1.0))
+    generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+    
+    power_curve = interp1d(wind_speeds, generation_kw)
+    
+    wp1 = xr.apply_ufunc(power_curve, windhhg,
                      dask='parallelized',
                      output_dtypes=[np.float64])
-	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-	cap = list(capacity/2000.0)
-	# multiply with installed capacity
-	wp2 = cap*wp1
+    # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+    cap = list(capacity/2000.0)
+    # multiply with installed capacity
+    wp2 = cap*wp1
 
     # make wind power generation start at commissioning date
     if(len(GWA)>0):

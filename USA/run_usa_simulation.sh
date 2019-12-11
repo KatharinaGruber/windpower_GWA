@@ -1,15 +1,15 @@
 #!/usr/bin/bash
 
 # download data
-python download_era5_USA.py
-bash bash run_merra_USA_download.sh 8
+#python download_era5_USA.py
+#bash bash run_merra_USA_download.sh 8
 
 # call scripts for preparing reanalysis data
-python prepare_USA_ERA5.py
-python prepare_USA_MERRA2.py
+#python prepare_USA_ERA5.py
+#python prepare_USA_MERRA2.py
 
 # run simulations without and with GWA
-DATASETS = 'MERRA ERA'
+DATASETS='MERRA ERA'
 for DS in $DATASETS
 do
     python WP_simulation_USA_$DS.py

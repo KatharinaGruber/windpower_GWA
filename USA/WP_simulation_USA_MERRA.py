@@ -51,7 +51,6 @@ if outfile not in glob.glob(results_path+'/*'):
 									  alpha.alpha,
 									  turbine_data_mer.height.values,
 									  turbine_data_mer.capacity.values,
-									  turbine_data_mer.sp.values,
 									  turbine_data_mer.lon.values,
 									  turbine_data_mer.lat.values,
 									  turbine_data_mer.commissioning.values)

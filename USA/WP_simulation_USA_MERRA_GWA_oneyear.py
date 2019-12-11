@@ -69,7 +69,6 @@ if results_path + '/oneyear/windpower_' + state + '_MERRA2_GWA_'+year+'.nc' not 
 									  alpha.alpha,
 									  turbine_data_mer_gwa.height[ind].values,
 									  turbine_data_mer_gwa.capacity[ind].values,
-									  turbine_data_mer_gwa.sp[ind].values,
 									  turbine_data_mer_gwa.lon[ind].values,
 									  turbine_data_mer_gwa.lat[ind].values,
 									  pd.to_datetime([year+'-01-01']*len(turbine_data_mer_gwa.commissioning[ind])),

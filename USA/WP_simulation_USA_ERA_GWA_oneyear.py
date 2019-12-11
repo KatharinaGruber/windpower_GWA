@@ -67,7 +67,6 @@ if results_path + '/oneyear/windpower_' + state + '_ERA5_GWA_'+year+'.nc' not in
 									alpha.alpha,
 									turbine_data_era_gwa.height[ind].values,
 									turbine_data_era_gwa.capacity[ind].values,
-									turbine_data_era_gwa.sp[ind].values,
 									turbine_data_era_gwa.lon[ind].values,
 									turbine_data_era_gwa.lat[ind].values,
 									pd.to_datetime([year+'-01-01']*len(turbine_data_era_gwa.commissioning[ind])),

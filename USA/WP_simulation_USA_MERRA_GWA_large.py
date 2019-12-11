@@ -61,7 +61,6 @@ if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outf
                                                     alpha.alpha,
                                                     turbine_data_mer_gwa.height[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.capacity[ind].values[i1:i2],
-                                                    turbine_data_mer_gwa.sp[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.lon[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.lat[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.commissioning[ind].values[i1:i2],

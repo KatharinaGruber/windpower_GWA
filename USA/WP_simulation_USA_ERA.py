@@ -49,7 +49,6 @@ if outfile not in glob.glob(results_path+'/*'):
                                           alpha.alpha,
                                           turbine_data_era.height.values,
                                           turbine_data_era.capacity.values,
-                                          turbine_data_era.sp.values,
                                           turbine_data_era.lon.values,
                                           turbine_data_era.lat.values,
                                           turbine_data_era.commissioning.values)
