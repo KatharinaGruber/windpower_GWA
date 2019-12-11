@@ -5,7 +5,7 @@ import pandas as pd
 
 from paths import ryberg_path
 
-def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_era5(windh100,alpha,hubheight,capacity,lons,lats,commissioning,GWA=[]):
     '''
     function for simulating wind power generation
     
@@ -44,14 +44,19 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
     else:
         windhhg = windhh.where(windhh<=25,0)
     
-    # Ryberg power curve model
-    RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
-    A = xr.DataArray(RybCoeff.A, dims = 'CF')
-    B = xr.DataArray(RybCoeff.B, dims = 'CF')
-    wp1 = power_curve(windhhg,A,B,specific_pow,len(windhhg.location))
-    
-    # multiply with installed capacity
-    wp2 = capacity*wp1/100
+    # Enercon E-82 power curve
+	wind_speeds = (np.arange(0, 26, step=1.0))
+	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+	
+	power_curve = interp1d(wind_speeds, generation_kw)
+	
+	wp1 = xr.apply_ufunc(power_curve, windhh,
+                     dask='parallelized',
+                     output_dtypes=[np.float64])
+	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+	cap = list(capacity/2000.0)
+	# multiply with installed capacity
+	wp2 = cap*wp1
     
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
@@ -65,7 +70,7 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
 
 
     
-def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,lons,lats,commissioning,GWA=[]):
     '''
     function for simulating wind power generation
     
@@ -104,14 +109,19 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
     else:
         windhhg = windhh.where(windhh<=25,0)
     
-    # Ryberg power curve model
-    RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
-    A = xr.DataArray(RybCoeff.A, dims = 'CF')
-    B = xr.DataArray(RybCoeff.B, dims = 'CF')
-    wp1 = power_curve(windhhg,A,B,specific_pow,len(windhhg.location))
-
-    # multiply with installed capacity
-    wp2 = capacity*wp1/100
+    # Enercon E-82 power curve
+	wind_speeds = (np.arange(0, 26, step=1.0))
+	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+	
+	power_curve = interp1d(wind_speeds, generation_kw)
+	
+	wp1 = xr.apply_ufunc(power_curve, windhh,
+                     dask='parallelized',
+                     output_dtypes=[np.float64])
+	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+	cap = list(capacity/2000.0)
+	# multiply with installed capacity
+	wp2 = cap*wp1
     
     
     # make wind power generation start at commissioning date
@@ -149,47 +159,11 @@ def stats(sim,obs,rd=True):
         
         
         
-        
-def power_curve(wind,A,B,spec_pow,num_locations):
-    
-    spec_pow = xr.DataArray(spec_pow, dims='location')
-    v = xr.concat((xr.DataArray(0 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [0]}),
-                   np.exp(A+B*np.log(spec_pow)),
-                   xr.DataArray(25 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [100]}),),
-                  dim='CF')
-
-    CF = np.concatenate((np.array([0]),np.linspace(0, 100, num=A.sizes['CF']),np.array([100])))
-    CF = xr.DataArray(CF, dims='CF', coords={'CF': v.CF})
-    
-    v_gridded = xr.DataArray(np.linspace(0, 25, num=300), dims='v', coords={'v': np.linspace(0, 25, num=300)})
-
-    power_curves_grid = xr.apply_ufunc(powerfunc,v_gridded,CF,v,
-                                       input_core_dims=[[],['CF'],['CF']],
-                                       vectorize = True)
-    
-    wind_new = xr.DataArray(wind.values,
-                            dims=('time', 'location'),
-                            coords={'location': np.arange(wind.sizes['location'])})
-    if(num_locations == 1):
-        wp1 = power_curves_grid.sel(location=0).interp(v = wind_new,
-                                                       method = 'linear')
-    else:
-        wp1 = power_curves_grid.interp(v = wind_new,
-                                       location = wind_new.location,
-                                       method = 'linear')
-    wp1 = wp1.drop('v').assign_coords(time=wind.time)
-    return(wp1)
-    
-    
-    
-def powerfunc(wind, CF, v):
-    return interp1d(v, CF)(wind)
-    
-    
+          
     
     
 # functions for handling larger states (with more locations)
-def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,lons,lats,commissioning,GWA=[]):
     # interpolate wind to locations of turbines
     wind = windh100.interp(coords={"longitude":xr.DataArray(lons,dims='location'),
                                    "latitude":xr.DataArray(lats,dims='location')},method="nearest")
@@ -214,14 +188,19 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
     else:
         windhhg = windhh.where(windhh<=25,0)
 
-    # Ryberg power curve model
-    RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
-    A = xr.DataArray(RybCoeff.A, dims = 'CF')
-    B = xr.DataArray(RybCoeff.B, dims = 'CF')
-    wp1 = power_curve_large(windhhg,A,B,specific_pow,len(windhhg.location))
-
-    # multiply with installed capacity
-    wp2 = capacity*wp1/100
+    # Enercon E-82 power curve
+	wind_speeds = (np.arange(0, 26, step=1.0))
+	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+	
+	power_curve = interp1d(wind_speeds, generation_kw)
+	
+	wp1 = xr.apply_ufunc(power_curve, windhh,
+                     dask='parallelized',
+                     output_dtypes=[np.float64])
+	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+	cap = list(capacity/2000.0)
+	# multiply with installed capacity
+	wp2 = cap*wp1
 
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
@@ -231,7 +210,7 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
 
     return(wp3)
     
-def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,lons,lats,commissioning,GWA=[]):
     # interpolate wind to locations of turbines
     wind = windh50.interp(coords={"lon":xr.DataArray(lons,dims='location'),
                                   "lat":xr.DataArray(lats,dims='location')},method="nearest")
@@ -256,14 +235,19 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
     else:
         windhhg = windhh.where(windhh<=25,0)
 
-    # Ryberg power curve model
-    RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
-    A = xr.DataArray(RybCoeff.A, dims = 'CF')
-    B = xr.DataArray(RybCoeff.B, dims = 'CF')
-    wp1 = power_curve_large(windhhg,A,B,specific_pow,len(windhhg.location))
-
-    # multiply with installed capacity
-    wp2 = capacity*wp1/100
+    # Enercon E-82 power curve
+	wind_speeds = (np.arange(0, 26, step=1.0))
+	generation_kw = [0.0, 0.000000000001, 3.0, 25.0, 82.0, 175.0, 321.0, 532.0, 815.0, 1180.0, 1580.0, 1810.0, 1980.0] + 13 * [2050.0]
+	
+	power_curve = interp1d(wind_speeds, generation_kw)
+	
+	wp1 = xr.apply_ufunc(power_curve, windhh,
+                     dask='parallelized',
+                     output_dtypes=[np.float64])
+	# fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
+	cap = list(capacity/2000.0)
+	# multiply with installed capacity
+	wp2 = cap*wp1
 
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
@@ -272,33 +256,4 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
         wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute()
 
     return(wp3)
-	
-def power_curve_large(wind,A,B,spec_pow,num_locations):
-
-    spec_pow = xr.DataArray(spec_pow, dims='location')
-    v = xr.concat((xr.DataArray(0 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [0]}),
-                   np.exp(A+B*np.log(spec_pow)),
-                   xr.DataArray(25 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [100]}),),
-                  dim='CF')
-
-    CF = np.concatenate((np.array([0]),np.linspace(0, 100, num=A.sizes['CF']),np.array([100])))
-    CF = xr.DataArray(CF, dims='CF', coords={'CF': v.CF})
-
-    v_gridded = xr.DataArray(np.linspace(0, 25, num=300), dims='v', coords={'v': np.linspace(0, 25, num=300)})
-
-    power_curves_grid = xr.apply_ufunc(powerfunc,v_gridded,CF,v,
-                                       input_core_dims=[[],['CF'],['CF']],
-                                       vectorize = True)
-    
-    try:
-        wind_new = wind.assign_coords(location=np.arange(len(wind.location))).drop(['longitude','latitude'])
-    except:
-        wind_new = wind.assign_coords(location=np.arange(len(wind.location))).drop(['lon','lat'])
-    if 'x' in list(wind_new.dims):
-        wind_new = wind_new.drop(['x','y'])
-    wp1 = power_curves_grid.interp(v = wind_new,
-                                   location = wind_new.location,
-                                   method = 'linear')
-    wp1 = wp1.drop('v').assign_coords(time=wind.time)
-    return(wp1)
 	
