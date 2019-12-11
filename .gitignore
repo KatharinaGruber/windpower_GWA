@@ -1,0 +1,19 @@
+BRA/download_era5_BRA.py
+BRA/download_era5_BRA2018.py
+BRA/download_merra2_BRA.py
+BRA/new_turb_BRA/
+BRA/paths_bra.py
+BRA/prepare_BRA_ERA5.py
+BRA/run_merra_BRA_download.sh
+USA/.ipynb_checkpoints/
+USA/BPA_Analysis.py
+USA/__pycache__/paths_usa.cpython-37.pyc
+USA/correlations_reanalysis_grid_points.py
+USA/run_USA_MERRA_GWA_simulation_newsp.sh
+__pycache__/
+old/
+other/
+paper_ethanol - Kopie/
+paper_ethanol/
+pathfiles/
+vsc/
