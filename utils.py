@@ -54,15 +54,16 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,lons,lats,commis
                      dask='parallelized',
                      output_dtypes=[np.float64])
     # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-    cap = list(capacity/2000.0)
+    cap = list(capacity/2050.0)
     # multiply with installed capacity
     wp2 = cap*wp1
+    wp2 = wp2.assign_coords(location = range(len(wp2.location)))
     
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute().drop('band')
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute().drop(['x','y','band'])
     else:
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute()
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute()
     
     return(wp3)
 
@@ -121,16 +122,17 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,lons,lats,commi
                      dask='parallelized',
                      output_dtypes=[np.float64])
     # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-    cap = list(capacity/2000.0)
+    cap = list(capacity/2050.0)
     # multiply with installed capacity
     wp2 = cap*wp1
+    wp2 = wp2.assign_coords(location = range(len(wp2.location)))
     
     
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute().drop('band')
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute().drop(['x','y','band'])
     else:
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute()
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute()
     
     return(wp3)
     
@@ -200,15 +202,16 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,lons,lats,
                      dask='parallelized',
                      output_dtypes=[np.float64])
     # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-    cap = list(capacity/2000.0)
+    cap = list(capacity/2050.0)
     # multiply with installed capacity
     wp2 = cap*wp1
-
+    wp2 = wp2.assign_coords(location = range(len(wp2.location)))
+    
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute().drop('band')
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute().drop(['x','y','band'])
     else:
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute()
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute()
 
     return(wp3)
     
@@ -247,15 +250,16 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,lons,lats
                      dask='parallelized',
                      output_dtypes=[np.float64])
     # fetch installed capacity and divide by 2000 to make factor for capacity of Enercon E-82
-    cap = list(capacity/2000.0)
+    cap = list(capacity/2050.0)
     # multiply with installed capacity
     wp2 = cap*wp1
-
+    wp2 = wp2.assign_coords(location = range(len(wp2.location)))
+    
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute().drop('band')
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute().drop(['x','y','band'])
     else:
-        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute()
+        wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))}, dims = 'location'), 0).compute()
 
     return(wp3)
 	

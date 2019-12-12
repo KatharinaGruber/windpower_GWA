@@ -13,10 +13,10 @@ DATASETS='MERRA ERA'
 for DS in $DATASETS
 do
     python WP_simulation_USA_$DS.py
-	bash run_USA_{$DS}_GWA_simulation.sh 1
-	bash run_USA_{$DS}_GWA_simulation_large.sh 1
+	bash run_USA_${DS}_GWA_simulation.sh 1
+	bash run_USA_${DS}_GWA_simulation_large.sh 1
 done
 
-python sum_up_regions.py
+python sum_up_regions_USA.py
 
 python WP_simulation_USA_Analysis.py

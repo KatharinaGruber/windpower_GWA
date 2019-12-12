@@ -102,7 +102,7 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
         wp_BPA_era = (wp_loc_era * np.array(BPA_era.p)).sum('location')
         wp_BPA_era.to_netcdf(ofile)
         del(BPA_era,wp_loc_era,wp_BPA_era)
-    
+
     # ERA5 + GWA
     ofile = results_path + "/windpower_BPA_ERA5_GWA.nc"
     if ofile not in glob.glob(results_path + "/*"):

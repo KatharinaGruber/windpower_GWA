@@ -42,7 +42,7 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
     alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc")
     # with GWA
     turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
-    GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA100m.tif')
+    GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA100m.tif')
     ind = turbine_data_era_gwa.state == state
 
     print('calculating ERA5 ' + state + ' GWA')
@@ -78,7 +78,7 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
         
     # merge  and delete temporary files
     wps = xr.open_mfdataset(results_path + "/wp_"+state+"_ERA5_GWA_temp*.nc", chunks = {'time': 100})
-    wps.drop(['x','y']).to_netcdf(results_path + "/windpower_"+state+"_ERA5_GWA.nc")
+    wps.to_netcdf(results_path + "/windpower_"+state+"_ERA5_GWA.nc")
     t2 = time.time()
     
     # remove temporary files
