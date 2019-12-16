@@ -9,6 +9,9 @@ import glob
 import os
 import xarray as xr
 
+import sys
+sys.path.append('../')
+
 from merra2download import download_month
 
 from dask.diagnostics import ProgressBar

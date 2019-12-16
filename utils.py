@@ -16,7 +16,7 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
     hubheight	vector of hub height of different turbines
     capacity	installed capacity of turbines
     lons, lats	locations of wind power plants
-    commissioning	commissioning date of wind power plants
+    commissioning	commissioning date of wind power plants, can be year only or date in datetime format
     GWA			empty list by default, if wind speed correction with GWA desired provide GWA
     '''
     
@@ -53,6 +53,26 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
     # multiply with installed capacity
     wp2 = capacity*wp1/100
     
+    if type(commissioning[0])==np.datetime64:
+        # method to be used if only commissionining years are known
+        # create timespans of commissioning years of all locations
+        timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
+        locs = np.concatenate([np.array([wp2.location.values[i]]*len(timespans[i])) for i in range(len(timespans))])
+        timespans = np.concatenate(timespans)
+        # make sure there are no indices before or after wind time series
+        locs_s = np.array(locs)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        timespans_s = np.array(timespans)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        # extract wind power generation at those timesteps and locations
+        wind_com_years = wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                                  'time':xr.DataArray(timespans_s,dims='cy')}]
+        # calculate factor from 0 to 1 to gradually increase power generation over commissioning year
+        fact = np.concatenate([np.arange(1,x+1)/x for x in np.unique(locs_s, return_counts=True)[1]])
+        # insert the gradually increasing capacities
+        wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                 'time':xr.DataArray(timespans_s,dims='cy')}] = wind_com_years * fact
+        # create commissioning dates from years
+        commissioning = np.array([np.datetime64(str(y)+'-01-01 00:00:00') for y in commissioning])
+    
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
         wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute().drop('band')
@@ -76,7 +96,7 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
     hubheight	vector of hub height of different turbines
     capacity	installed capacity of turbines
     lons, lats	locations of wind power plants
-    commissioning	commissioning date of wind power plants
+    commissioning	commissioning date of wind power plants, can be year only or date in datetime format
     GWA			empty list by default, if wind speed correction with GWA desired provide GWA
     '''
     
@@ -113,6 +133,26 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
     # multiply with installed capacity
     wp2 = capacity*wp1/100
     
+    
+    if type(commissioning[0])==np.datetime64:
+        # method to be used if only commissionining years are known
+        # create timespans of commissioning years of all locations
+        timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
+        locs = np.concatenate([np.array([wp2.location.values[i]]*len(timespans[i])) for i in range(len(timespans))])
+        timespans = np.concatenate(timespans)
+        # make sure there are no indices before or after wind time series
+        locs_s = np.array(locs)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        timespans_s = np.array(timespans)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        # extract wind power generation at those timesteps and locations
+        wind_com_years = wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                                  'time':xr.DataArray(timespans_s,dims='cy')}]
+        # calculate factor from 0 to 1 to gradually increase power generation over commissioning year
+        fact = np.concatenate([np.arange(1,x+1)/x for x in np.unique(locs_s, return_counts=True)[1]])
+        # insert the gradually increasing capacities
+        wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                 'time':xr.DataArray(timespans_s,dims='cy')}] = wind_com_years * fact
+        # create commissioning dates from years
+        commissioning = np.array([np.datetime64(str(y)+'-01-01 00:00:00') for y in commissioning])
     
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
@@ -223,6 +263,26 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
     # multiply with installed capacity
     wp2 = capacity*wp1/100
 
+    if type(commissioning[0])==np.datetime64:
+        # method to be used if only commissionining years are known
+        # create timespans of commissioning years of all locations
+        timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
+        locs = np.concatenate([np.array([wp2.location.values[i]]*len(timespans[i])) for i in range(len(timespans))])
+        timespans = np.concatenate(timespans)
+        # make sure there are no indices before or after wind time series
+        locs_s = np.array(locs)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        timespans_s = np.array(timespans)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        # extract wind power generation at those timesteps and locations
+        wind_com_years = wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                                  'time':xr.DataArray(timespans_s,dims='cy')}]
+        # calculate factor from 0 to 1 to gradually increase power generation over commissioning year
+        fact = np.concatenate([np.arange(1,x+1)/x for x in np.unique(locs_s, return_counts=True)[1]])
+        # insert the gradually increasing capacities
+        wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                 'time':xr.DataArray(timespans_s,dims='cy')}] = wind_com_years * fact
+        # create commissioning dates from years
+        commissioning = np.array([np.datetime64(str(y)+'-01-01 00:00:00') for y in commissioning])
+
     # make wind power generation start at commissioning date
     if(len(GWA)>0):
         wp3 =  wp2.where(wp2.time >= xr.DataArray(commissioning,coords={'location':range(len(commissioning))},dims='location'), 0).compute().drop('band')
@@ -264,6 +324,26 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
 
     # multiply with installed capacity
     wp2 = capacity*wp1/100
+
+    if type(commissioning[0])==np.datetime64:
+        # method to be used if only commissionining years are known
+        # create timespans of commissioning years of all locations
+        timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
+        locs = np.concatenate([np.array([wp2.location.values[i]]*len(timespans[i])) for i in range(len(timespans))])
+        timespans = np.concatenate(timespans)
+        # make sure there are no indices before or after wind time series
+        locs_s = np.array(locs)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        timespans_s = np.array(timespans)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
+        # extract wind power generation at those timesteps and locations
+        wind_com_years = wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                                  'time':xr.DataArray(timespans_s,dims='cy')}]
+        # calculate factor from 0 to 1 to gradually increase power generation over commissioning year
+        fact = np.concatenate([np.arange(1,x+1)/x for x in np.unique(locs_s, return_counts=True)[1]])
+        # insert the gradually increasing capacities
+        wp2.loc[{'location':xr.DataArray(locs_s,dims='cy'),
+                 'time':xr.DataArray(timespans_s,dims='cy')}] = wind_com_years * fact
+        # create commissioning dates from years
+        commissioning = np.array([np.datetime64(str(y)+'-01-01 00:00:00') for y in commissioning])
 
     # make wind power generation start at commissioning date
     if(len(GWA)>0):

@@ -54,6 +54,6 @@ if outfile not in glob.glob(results_path+'/*'):
 									  turbine_data_mer.sp.values,
 									  turbine_data_mer.lon.values,
 									  turbine_data_mer.lat.values,
-									  turbine_data_mer.commissioning.values)
+                                      pd.to_datetime(turbine_data_mer.commissioning.values).year.values)
 	# save as netcdf
 	wps.to_dataset(name='wp').to_netcdf(outfile)

@@ -57,11 +57,11 @@ turbine_data_mer_gwa = pd.read_csv(usa_path + '/turbine_data_mer_gwa.csv', parse
 if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outfile):
 	print('calculating MERRA2 ' + state + ' GWA')
 	if state == 'HI':
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_HI50m.tif')
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_HI50m.tif')
 	elif state == 'PR':
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_PR50m.tif')
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_PR50m.tif')
 	else:
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA50m.tif')
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA50m.tif')
 	ind = turbine_data_mer_gwa.state == state
 	wps = windpower_simulation_merra2(wind.wh50,
 									  alpha.alpha,
@@ -70,7 +70,7 @@ if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outf
 									  turbine_data_mer_gwa.sp[ind].values,
 									  turbine_data_mer_gwa.lon[ind].values,
 									  turbine_data_mer_gwa.lat[ind].values,
-									  turbine_data_mer_gwa.commissioning[ind].values,
+									  pd.to_datetime(turbine_data_mer_gwa.commissioning[ind].values).year.values,
 									  GWA)
 	# save as netcdf
 	wps.to_dataset(name='wp').to_netcdf(results_path+"/windpower_"+state+"_MERRA2_GWA.nc")

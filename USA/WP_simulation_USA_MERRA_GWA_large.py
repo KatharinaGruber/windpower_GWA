@@ -41,7 +41,7 @@ if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outf
     alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_USA_*.nc")
     # with GWA
     turbine_data_mer_gwa = pd.read_csv(usa_path + '/turbine_data_mer_gwa.csv', parse_dates=['commissioning'])
-    GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA50m.tif')
+    GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA50m.tif')
     ind = turbine_data_mer_gwa.state == state
 
     print('calculating MERRA2 ' + state + ' GWA')
@@ -64,7 +64,7 @@ if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outf
                                                     turbine_data_mer_gwa.sp[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.lon[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.lat[ind].values[i1:i2],
-                                                    turbine_data_mer_gwa.commissioning[ind].values[i1:i2],
+                                                    pd.to_datetime(turbine_data_mer_gwa.commissioning[ind].values[i1:i2]).year.values,
                                                     GWA)
             # adapt numbers of locations in dataset
             wps = wps.assign_coords(location = np.arange(i1,i2))

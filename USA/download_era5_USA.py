@@ -22,7 +22,7 @@ from paths_usa import era_path
 
 DOWNLOAD_DIR = era_path
 
-YEARS = range(2000, 2019)
+YEARS = range(2001, 2019)
 MONTHS = list(range(1, 13))
 
 setup_logging(op.join(DOWNLOAD_DIR, 'download.log'))
@@ -46,7 +46,7 @@ def main():
 
     c = cdsapi.Client()
     
-    if len(glob.glob(DOWNLOAD_DIR + '/era5_wind_USA_*.nc')) < 20*12:
+    if len(glob.glob(DOWNLOAD_DIR + '/era5_wind_USA_*.nc')) < 18*12:
         for year in YEARS:
             for month in MONTHS:
                 filename = op.join(DOWNLOAD_DIR,
