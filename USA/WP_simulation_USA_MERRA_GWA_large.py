@@ -1,7 +1,7 @@
 # more or less the same simulation, but split up in to chunks that fit into memory
 # for large states (CA, IA, KS, OK, TX)
-# chunks of size 3300 (3300 locations in one part calculated and create temporary file)
-location_chunk = 3300
+# chunks of size 2000 (2000 locations in one part calculated and create temporary file)
+location_chunk = 2000
 
 import argparse
 import datetime

@@ -53,7 +53,7 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
     # multiply with installed capacity
     wp2 = capacity*wp1/100
     
-    if type(commissioning[0])==np.datetime64:
+    if type(commissioning[0])!=np.datetime64:
         # method to be used if only commissionining years are known
         # create timespans of commissioning years of all locations
         timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
@@ -134,7 +134,7 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
     wp2 = capacity*wp1/100
     
     
-    if type(commissioning[0])==np.datetime64:
+    if type(commissioning[0])!=np.datetime64:
         # method to be used if only commissionining years are known
         # create timespans of commissioning years of all locations
         timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
@@ -263,7 +263,7 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
     # multiply with installed capacity
     wp2 = capacity*wp1/100
 
-    if type(commissioning[0])==np.datetime64:
+    if type(commissioning[0])!=np.datetime64:
         # method to be used if only commissionining years are known
         # create timespans of commissioning years of all locations
         timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
@@ -325,7 +325,7 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
     # multiply with installed capacity
     wp2 = capacity*wp1/100
 
-    if type(commissioning[0])==np.datetime64:
+    if type(commissioning[0])!=np.datetime64:
         # method to be used if only commissionining years are known
         # create timespans of commissioning years of all locations
         timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]

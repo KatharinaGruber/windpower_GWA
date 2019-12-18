@@ -3,6 +3,7 @@
 # 2. Calculate alpha friction coefficient
 
 from paths_usa import era_path
+import glob
 
 files = glob.glob(era_path+'/*.nc')
 
