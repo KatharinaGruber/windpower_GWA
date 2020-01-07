@@ -45,14 +45,16 @@ if len(glob.glob(era_path + '/eff_ws/*')) != 18:
 
 # Simulate wind power with ERA5
 wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 38})
-alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc")
+alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'time': 38})
 
 # with GWA
 outfile = results_path + '/windpower_??_ERA5_GWA.nc'
 turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
 if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfile):
 	print('calculating ERA5 ' + state + ' GWA')
-	if state == 'HI':
+	if state == 'AK':
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_AK100m.tif')
+	elif state == 'HI':
 		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_HI100m.tif')
 	elif state == 'PR':
 		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_PR100m.tif')

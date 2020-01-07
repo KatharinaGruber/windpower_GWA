@@ -47,7 +47,7 @@ if len(glob.glob(era_path + '/eff_ws/*')) != 18:
 
 # Simulate wind power with MERRA-2
 wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_USA_*.nc", chunks = {'time': 38})
-alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_USA_*.nc")
+alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_USA_*.nc", chunks = {'time': 38})
 	
 # with GWA
 outfile = results_path + '/windpower_??_MERRA2_GWA.nc'
@@ -56,7 +56,9 @@ turbine_data_mer_gwa = pd.read_csv(usa_path + '/turbine_data_mer_gwa.csv', parse
 
 if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outfile):
 	print('calculating MERRA2 ' + state + ' GWA')
-	if state == 'HI':
+	if state == 'AK':
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_AK50m.tif')
+	elif state == 'HI':
 		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_HI50m.tif')
 	elif state == 'PR':
 		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_PR50m.tif')

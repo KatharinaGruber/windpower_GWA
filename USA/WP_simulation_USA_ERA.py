@@ -39,7 +39,7 @@ if len(glob.glob(era_path + '/eff_ws/*')) != 18:
 
 # Simulate wind power with ERA5
 wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 38})
-alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc")
+alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'time': 38})
 
 # without GWA
 outfile = results_path + '/windpower_stat_ERA5.nc'
