@@ -189,37 +189,6 @@ def stats(sim,obs,rd=True):
         
         
         
-        
-def power_curve(wind,A,B,spec_pow,num_locations):
-    
-    spec_pow = xr.DataArray(spec_pow, dims='location')
-    v = xr.concat((xr.DataArray(0 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [0]}),
-                   np.exp(A+B*np.log(spec_pow)),
-                   xr.DataArray(25 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [100]}),),
-                  dim='CF')
-
-    CF = np.concatenate((np.array([0]),np.linspace(0, 100, num=A.sizes['CF']),np.array([100])))
-    CF = xr.DataArray(CF, dims='CF', coords={'CF': v.CF})
-    
-    v_gridded = xr.DataArray(np.linspace(0, 25, num=300), dims='v', coords={'v': np.linspace(0, 25, num=300)})
-
-    power_curves_grid = xr.apply_ufunc(powerfunc,v_gridded,CF,v,
-                                       input_core_dims=[[],['CF'],['CF']],
-                                       vectorize = True)
-    
-    wind_new = xr.DataArray(wind.values,
-                            dims=('time', 'location'),
-                            coords={'location': np.arange(wind.sizes['location'])})
-    if(num_locations == 1):
-        wp1 = power_curves_grid.sel(location=0).interp(v = wind_new,
-                                                       method = 'linear')
-    else:
-        wp1 = power_curves_grid.interp(v = wind_new,
-                                       location = wind_new.location,
-                                       method = 'linear')
-    wp1 = wp1.drop('v').assign_coords(time=wind.time)
-    return(wp1)
-    
     
     
 def powerfunc(wind, CF, v):
@@ -258,7 +227,7 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
     RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
     A = xr.DataArray(RybCoeff.A, dims = 'CF')
     B = xr.DataArray(RybCoeff.B, dims = 'CF')
-    wp1 = power_curve_large(windhhg,A,B,specific_pow,len(windhhg.location))
+    wp1 = power_curve(windhhg,A,B,specific_pow,len(windhhg.location))
 
     # multiply with installed capacity
     wp2 = capacity*wp1/100
@@ -320,7 +289,7 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
     RybCoeff = pd.read_csv(ryberg_path+"/ryberg_coeff.csv")
     A = xr.DataArray(RybCoeff.A, dims = 'CF')
     B = xr.DataArray(RybCoeff.B, dims = 'CF')
-    wp1 = power_curve_large(windhhg,A,B,specific_pow,len(windhhg.location))
+    wp1 = power_curve(windhhg,A,B,specific_pow,len(windhhg.location))
 
     # multiply with installed capacity
     wp2 = capacity*wp1/100
@@ -353,7 +322,7 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
 
     return(wp3)
 	
-def power_curve_large(wind,A,B,spec_pow,num_locations):
+def power_curve(wind,A,B,spec_pow,num_locations):
 
     spec_pow = xr.DataArray(spec_pow, dims='location')
     v = xr.concat((xr.DataArray(0 * np.ones((1,num_locations)), dims=('CF', 'location'), coords={'CF': [0]}),
@@ -376,9 +345,13 @@ def power_curve_large(wind,A,B,spec_pow,num_locations):
         wind_new = wind.assign_coords(location=np.arange(len(wind.location))).drop(['lon','lat'])
     if 'x' in list(wind_new.dims):
         wind_new = wind_new.drop(['x','y'])
-    wp1 = power_curves_grid.interp(v = wind_new,
-                                   location = wind_new.location,
-                                   method = 'linear')
+    if(num_locations == 1):
+        wp1 = power_curves_grid.sel(location=0).interp(v = wind_new,
+                                                       method = 'linear')
+    else:
+        wp1 = power_curves_grid.interp(v = wind_new,
+                                       location = wind_new.location,
+                                       method = 'linear')
     wp1 = wp1.drop('v').assign_coords(time=wind.time)
     return(wp1)
 	
