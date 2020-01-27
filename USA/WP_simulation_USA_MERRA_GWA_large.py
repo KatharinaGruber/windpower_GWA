@@ -37,8 +37,8 @@ state = args.state
 outfile = results_path + '/windpower_??_MERRA2_GWA.nc'
 if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outfile):
 
-    wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_USA_*.nc", chunks = {'time': 100})
-    alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_USA_*.nc")
+    wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_USA_*.nc", chunks = {'time': 38})
+    alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_USA_*.nc", chunks = {'time': 38})
     # with GWA
     turbine_data_mer_gwa = pd.read_csv(usa_path + '/turbine_data_mer_gwa.csv', parse_dates=['commissioning'])
     GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA50m.tif')

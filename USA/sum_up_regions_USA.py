@@ -51,7 +51,7 @@ if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:
     ofile = results_path + "/windpower_states_ERA5_GWA.nc"
     if ofile not in glob.glob(results_path + '/*'):
         turbine_data_era_gwa = pd.read_csv(usa_path+"/turbine_data_era_gwa.csv")
-        wp_loc = xr.open_mfdataset(results_path+"/windpower_??_ERA5_GWA.nc")
+        wp_loc = xr.open_mfdataset(results_path+"/windpower_??_ERA5_GWA.nc", chunks = {'time':38})
         wp = wp_loc.groupby(xr.DataArray(turbine_data_era_gwa.state,dims='location')).sum('location')
         wp.to_netcdf(ofile)
         del(wp,wp_loc,turbine_data_era_gwa)

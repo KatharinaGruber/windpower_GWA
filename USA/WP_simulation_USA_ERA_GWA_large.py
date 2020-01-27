@@ -38,8 +38,8 @@ state = args.state
 outfile = results_path + '/windpower_??_ERA5_GWA.nc'
 if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfile):
 
-    wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 100})
-    alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc")
+    wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 38})
+    alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'time': 38})
     # with GWA
     turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
     GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA100m.tif')
@@ -70,7 +70,13 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
             # adapt numbers of locations in dataset
             wps = wps.assign_coords(location = np.arange(i1,i2))
             # save temporary file
+            print('saving to '+results_path + "/wp_"+state+"_ERA5_GWA_temp" + str(it+1) +".nc")
+            
             wps.to_dataset(name='wp').to_netcdf(results_path + "/wp_"+state+"_ERA5_GWA_temp" + str(it+1) +".nc")
+            
+            
+            print('saved to '+results_path + "/wp_"+state+"_ERA5_GWA_temp" + str(it+1) +".nc")
+            
             wps.close()
             del(wps)
         i1 = i2
@@ -79,7 +85,13 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
         
     # merge  and delete temporary files
     wps = xr.open_mfdataset(results_path + "/wp_"+state+"_ERA5_GWA_temp*.nc", chunks = {'time': 100})
+    
+    print('saving to'+results_path + "/windpower_"+state+"_ERA5_GWA.nc")
+    
     wps.drop(['x','y']).to_netcdf(results_path + "/windpower_"+state+"_ERA5_GWA.nc")
+    
+    print('saved to '+results_path + "/windpower_"+state+"_ERA5_GWA.nc")
+    
     t2 = time.time()
     
     # remove temporary files
