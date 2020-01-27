@@ -36,8 +36,8 @@ sp = cap/(rd**2*math.pi/4)*1000
 # determine the capacities of turbines with sp < 100 (powercurve does not look realistic with this value)
 caps_newsp = np.sort(np.unique(cap[sp<100]))
 # some are not in rest of data - find closest value
-diff = abs(cap[sp>=100]-caps_newsp[[cn not in cap[sp>=100] for cn in caps_newsp]])
-caps_newsp[[cn not in cap[sp>=100] for cn in caps_newsp]] = cap[sp>=100][np.where(diff==min(diff))][0]
+diff = [abs(cap[sp>=100] - c).tolist() for c in caps_newsp[[cn not in cap[sp>=100] for cn in caps_newsp]]]
+caps_newsp[[cn not in cap[sp>=100] for cn in caps_newsp]] = cap[sp>=100][[np.where(np.array(d)==min(d))[0][0] for d in diff]]
 # get new sp
 new_sp = [sp[(sp>=100)&(cap==c)].mean() for c in caps_newsp]
 caps_newsp = np.sort(np.unique(cap[sp<100]))
