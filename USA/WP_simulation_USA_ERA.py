@@ -18,7 +18,7 @@ from functools import reduce
 from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 
-from utils import power_curve_large
+from utils import power_curve
 from utils import windpower_simulation_era5_large
 
 
