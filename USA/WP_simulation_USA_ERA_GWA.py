@@ -52,14 +52,10 @@ outfile = results_path + '/windpower_??_ERA5_GWA.nc'
 turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
 if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfile):
 	print('calculating ERA5 ' + state + ' GWA')
-	if state == 'AK':
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_AK100m.tif')
-	elif state == 'HI':
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_HI100m.tif')
-	elif state == 'PR':
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_PR100m.tif')
+	if state == 'PR':
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_PR100m.tif')
 	else:
-		GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA100m.tif')
+		GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA100m.tif')
 	ind = turbine_data_era_gwa.state == state
 	wps = windpower_simulation_era5(wind.wh100,
 									alpha.alpha,
@@ -71,4 +67,4 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
 									pd.to_datetime(turbine_data_era_gwa.commissioning[ind].values).year.values,
 									GWA)
 	# save as netcdf
-	wps.to_dataset(name='wp').to_netcdf(results_path+"/windpower_"+state+"_ERA5_GWA.nc")
+	wps.drop(['x','y']).to_dataset(name='wp').to_netcdf(results_path+"/windpower_"+state+"_ERA5_GWA.nc")

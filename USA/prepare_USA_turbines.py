@@ -74,23 +74,12 @@ ip = in_seq.interp(coords={"lon":xr.DataArray(turbine_data.lon,dims='location'),
                            "lat":xr.DataArray(turbine_data.lat,dims='location')},method="nearest").to_dataframe()
 
 # Load GWA data and extract values at locations to find unique locations					   
-GWA_USA = xr.open_rasterio(usa_path+'/GWA/GWA_USA50m.tif')
-# three regions are not included in the continental USA region: Alaska, Haitii and Puerto Rico
-GWA_AK = xr.open_rasterio(usa_path+'/GWA/GWA_AK50m.tif')
-GWA_HI = xr.open_rasterio(usa_path+'/GWA/GWA_HI50m.tif')
-GWA_PR = xr.open_rasterio(usa_path+'/GWA/GWA_PR50m.tif')
+GWA_USA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA50m.tif')
+GWA_PR = xr.open_rasterio(usa_path+'/GWA/GWA3_PR50m.tif')
 # interpolate GWA to all locations and compare if same locations from rea dataset match same locations from GWA
 GWA_ip = GWA_USA.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.lon,dims='location'),
                                             "y":xr.DataArray(turbine_data.lat,dims='location')},
                                     method="nearest").to_dataframe(name='GWA')
-GWA_ak = GWA_AK.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.xs('AK').lon,dims='location'),
-                                           "y":xr.DataArray(turbine_data.xs('AK').lat,dims='location')},
-                                   method="nearest").to_dataframe(name='GWA')
-GWA_ip.loc[GWA_ip.index.get_level_values(0).values=='AK','GWA'] = GWA_ak.GWA.values
-GWA_hi = GWA_HI.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.xs('HI').lon,dims='location'),
-                                           "y":xr.DataArray(turbine_data.xs('HI').lat,dims='location')},
-                                   method="nearest").to_dataframe(name='GWA')
-GWA_ip.loc[GWA_ip.index.get_level_values(0).values=='HI','GWA'] = GWA_hi.GWA.values
 GWA_pr = GWA_PR.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.xs('PR').lon,dims='location'),
                                            "y":xr.DataArray(turbine_data.xs('PR').lat,dims='location')},
                                    method="nearest").to_dataframe(name='GWA')
@@ -161,23 +150,12 @@ ip = in_seq.interp(coords={"lon":xr.DataArray(turbine_data.lon,dims='location'),
                            "lat":xr.DataArray(turbine_data.lat,dims='location')},method="nearest").to_dataframe()
 
 # Load GWA data and extract values at locations to find unique locations					   
-GWA_USA = xr.open_rasterio(usa_path+'/GWA/GWA_USA100m.tif')
-# three regions are not included in the continental USA region: Alaska, Haitii and Puerto Rico
-GWA_AK = xr.open_rasterio(usa_path+'/GWA/GWA_AK100m.tif')
-GWA_HI = xr.open_rasterio(usa_path+'/GWA/GWA_HI100m.tif')
-GWA_PR = xr.open_rasterio(usa_path+'/GWA/GWA_PR100m.tif')
+GWA_USA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA100m.tif')
+GWA_PR = xr.open_rasterio(usa_path+'/GWA/GWA3_PR100m.tif')
 # interpolate GWA to all locations and compare if same locations from rea dataset match same locations from GWA
 GWA_ip = GWA_USA.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.lon,dims='location'),
                                             "y":xr.DataArray(turbine_data.lat,dims='location')},
                                     method="nearest").to_dataframe(name='GWA')
-GWA_ak = GWA_AK.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.xs('AK').lon,dims='location'),
-                                           "y":xr.DataArray(turbine_data.xs('AK').lat,dims='location')},
-                                   method="nearest").to_dataframe(name='GWA')
-GWA_ip.loc[GWA_ip.index.get_level_values(0).values=='AK','GWA'] = GWA_ak.GWA.values
-GWA_hi = GWA_HI.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.xs('HI').lon,dims='location'),
-                                           "y":xr.DataArray(turbine_data.xs('HI').lat,dims='location')},
-                                   method="nearest").to_dataframe(name='GWA')
-GWA_ip.loc[GWA_ip.index.get_level_values(0).values=='HI','GWA'] = GWA_hi.GWA.values
 GWA_pr = GWA_PR.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.xs('PR').lon,dims='location'),
                                            "y":xr.DataArray(turbine_data.xs('PR').lat,dims='location')},
                                    method="nearest").to_dataframe(name='GWA')
