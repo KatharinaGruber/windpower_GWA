@@ -23,10 +23,19 @@ from paths_usa import *
 def get_cap_df(cap,comdate):
     com = pd.DataFrame({'capacity': cap}).groupby(comdate).sum()
     cap_cum = com.capacity.cumsum()
+    # if only years given for commissioning dates -> gradual capacity increase over year, full capacity at end of year
+    if type(cap_cum.index.values[0]) == np.int64:
+        cap_cum.index = [np.datetime64(str(int(year))+"-12-31 23:00:00") for year in cap_cum.index.values]
+        # if missing years -> put capacity of year before
+        drcc = pd.date_range(cap_cum.index[0],cap_cum.index[-1],freq = 'y')
+        cap_cum = pd.Series(drcc.map(cap_cum),index = drcc).ffill()
     dr = pd.date_range('1/1/2000','31/12/2018 23:00:00',freq = 'h')
     cap_ts = pd.Series(dr.map(cap_cum),index = dr)
     cap_ts[0] = cap_cum[cap_cum.index<=pd.Timestamp('2000-01-01')].max()
-    return(cap_ts.fillna(method='ffill'))
+    if type(comdate[0]) == np.int64:
+        return(cap_ts.interpolate(method='linear'))
+    else:
+        return(cap_ts.fillna(method='ffill'))
     
     
 ### Prepare wind park data - Installed capacities
@@ -45,15 +54,15 @@ NE_states = ['CT','NH','ME','MA','RI','VT']
 NE_turbines = turb_mer[[state in ['CT','NH','ME','MA','RI','VT'] for state in turb_mer.state]]
 # get capacities time series for all regions
 cap_usa = get_cap_df(turb_mer.capacity.values,
-                     turb_mer.commissioning.values).tz_localize('UTC').tz_convert('US/Central')
+                     pd.DatetimeIndex(turb_mer.commissioning).year.values).tz_localize('UTC').tz_convert('US/Central')
 cap_IA = get_cap_df(turb_mer.capacity[turb_mer.state=='IA'].values,
-                    turb_mer.commissioning[turb_mer.state=='IA'].values).tz_localize('UTC').tz_convert('US/Central')
+                    pd.DatetimeIndex(turb_mer.commissioning[turb_mer.state=='IA']).year.values).tz_localize('UTC').tz_convert('US/Central')
 cap_TX = get_cap_df(turb_mer.capacity[turb_mer.state=='TX'].values,
-                    turb_mer.commissioning[turb_mer.state=='TX'].values).tz_localize('UTC').tz_convert('US/Central')
+                    pd.DatetimeIndex(turb_mer.commissioning[turb_mer.state=='TX']).year.values).tz_localize('UTC').tz_convert('US/Central')
 cap_BPA = get_cap_df(wt.capacity[pBPA.p].values,
-                     wt.time[pBPA.p].values).tz_localize('UTC')
+                     pd.DatetimeIndex(wt.time[pBPA.p]).year.values).tz_localize('UTC')
 cap_NE = get_cap_df(NE_turbines.capacity.values,
-                    NE_turbines.commissioning.values).tz_localize('UTC').tz_convert('US/Eastern')
+                    pd.DatetimeIndex(NE_turbines.commissioning).year.values).tz_localize('UTC').tz_convert('US/Eastern')
 # aggregate daily or monthly where needed
 cap_usam = cap_usa.resample('M').sum()
 cap_IAm = cap_IA.resample('M').sum()
