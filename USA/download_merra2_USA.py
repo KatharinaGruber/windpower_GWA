@@ -20,14 +20,13 @@ ProgressBar().register()
 from multiprocessing import Pool
 
 from paths_usa import mer_path
+from merra_cred import user, password
 
 
 yms = np.char.replace(np.arange(np.datetime64('2000-12'),
                                 np.datetime64('2020-01')).astype('str'),'-','')
 region = 'USA'
 
-user = 'RE_EXTREME'
-password = 'Re_extreme666!'
 var = ['DISPH', 'U10M', 'U50M', 'V10M', 'V50M']
 
 lat1 = 12
@@ -43,11 +42,11 @@ def dl_month_usa(ym):
     ofile = opath + '/merra2_wind_' + region + '_' + ym + '.nc'
     if ofile in glob.glob(opath + '/*'):
         print(ofile, ' already there')
-        exit()
+        return()
 
     if not os.path.exists(opath):
         print('Directory does not exist')
-        exit()
+        return()
     elif not os.path.exists(opath + '/temp'):
         os.mkdir(opath + '/temp')
     download_month(ym, lon1, lat1, lon2, lat2, var, user, password, opath + '/temp')
