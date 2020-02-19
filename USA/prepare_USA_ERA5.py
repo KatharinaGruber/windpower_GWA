@@ -4,8 +4,11 @@
 
 from paths_usa import era_path
 import glob
+import numpy as np
+import xarray as xr
 
 files = glob.glob(era_path+'/*.nc')
+files.sort()
 
 out_files = glob.glob(era_path + '/eff_ws/*')
 
@@ -22,12 +25,15 @@ if wfile not in out_files:
 						 'wh100': wh100})
 	print('saving wind 2000-2002')			 
 	eff_ws.to_netcdf(wfile)
+	eff_ws.close()
+	del(eff_ws)
 if afile not in out_files:
 	print('calculating alpha 2000-2002')
 	eff_ws = xr.open_dataset(wfile)
 	alpha = (xr.ufuncs.log(eff_ws.wh100/eff_ws.wh100)/np.log(100/10)).compute()
 	print('saving alpha 2000-2002')
 	xr.Dataset({'alpha': alpha}).to_netcdf(afile)
+	del(alpha)
 
 
 # other periods
@@ -46,9 +52,36 @@ for year in [3,5,7,9,11,13,15,17]:
 							 'wh100': wh100})
 						 
 		eff_ws.to_netcdf(wfile)
+		eff_ws.close()
+		del(eff_ws)
 	if afile not in out_files:
 		print('calculating alpha ' + str(2000+year) + '-' + str(2000+year+1))
 		eff_ws = xr.open_dataset(wfile)
 		alpha = (xr.ufuncs.log(eff_ws.wh100/eff_ws.wh10)/np.log(100/10)).compute()
 		print('saving alpha ' + str(2000+year) + '-' + str(2000+year+1))
 		xr.Dataset({'alpha': alpha}).to_netcdf(afile)
+		del(alpha)
+
+
+# 2019
+wfile = era_path+'/eff_ws/era5_wind_USA_2019.nc'
+afile = era_path+'/eff_ws/era5_alpha_USA_2019.nc'
+if wfile not in out_files:
+    print('calculating wind 2019')
+    data = xr.open_mfdataset(files[-12:], chunks = {'time': 38})
+    wh10 = ((data.u10**2+data.v10**2)**0.5).compute()
+    wh100 = ((data.u100**2+data.v100**2)**0.5).compute()
+    print('saving wind 2019')
+    eff_ws = xr.Dataset({'wh10': wh10,
+                         'wh100': wh100})
+                     
+    eff_ws.to_netcdf(wfile)
+    eff_ws.close()
+    del(eff_ws)
+if afile not in out_files:
+    print('calculating alpha 2019')
+    eff_ws = xr.open_dataset(wfile)
+    alpha = (xr.ufuncs.log(eff_ws.wh100/eff_ws.wh10)/np.log(100/10)).compute()
+    print('saving alpha 2019')
+    xr.Dataset({'alpha': alpha}).to_netcdf(afile)
+    del(alpha)
