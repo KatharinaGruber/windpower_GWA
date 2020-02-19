@@ -17,26 +17,30 @@ import sys
 sys.path.append('../')
 
 from logging_config import setup_logging
+from multiprocessing import Pool
 
 from paths_usa import era_path
 
 DOWNLOAD_DIR = era_path
+COUNTRY = 'USA'
 
-YEARS = range(2001, 2019)
+YEARS = range(2001, 2020)
 MONTHS = list(range(1, 13))
+
+north = 68
+south = 12
+west = -173
+east = -64
 
 setup_logging(op.join(DOWNLOAD_DIR, 'download.log'))
 
 
-def main():
+
+
+def download_era5(year):
     # API documentation for downloading a subset:
     # https://confluence.ecmwf.int/display/CKB/Global+data%3A+Download+data+from+ECMWF+for+a+particular+area+and+resolution
     # https://retostauffer.org/code/Download-ERA5/
-
-    north = 68
-    south = 12
-    east = -173
-    west = -64
 
     # Format for downloading ERA5: North/West/South/East
     bounding_box = "{}/{}/{}/{}".format(north, west, south, east)
@@ -46,11 +50,10 @@ def main():
 
     c = cdsapi.Client()
     
-    if len(glob.glob(DOWNLOAD_DIR + '/era5_wind_USA_*.nc')) < 18*12:
-        for year in YEARS:
+    if len(glob.glob(DOWNLOAD_DIR + '/era5_wind_' + COUNTRY + '_*.nc')) < (YEARS[-1] - YEARS[0] + 1) * 12:
             for month in MONTHS:
                 filename = op.join(DOWNLOAD_DIR,
-                                   f'era5_wind_USA_{year}{month:02d}.nc')
+                                   'era5_wind_' + COUNTRY + f'_{year}{month:02d}.nc')
 
                 if op.exists(filename):
                     logging.info(f"Skipping {filename}, already exists!")
@@ -169,4 +172,5 @@ def patch_cdsapi():
 
 if __name__ == '__main__':
     patch_cdsapi()
-main()
+    pool = Pool()
+    pool.map(download_era5,YEARS)
