@@ -63,6 +63,18 @@ cap_BPA = get_cap_df(wt.capacity[pBPA.p].values,
                      pd.DatetimeIndex(wt.time[pBPA.p]).year.values).tz_localize('UTC')
 cap_NE = get_cap_df(NE_turbines.capacity.values,
                     pd.DatetimeIndex(NE_turbines.commissioning).year.values).tz_localize('UTC').tz_convert('US/Eastern')
+                    
+# get IRENA capacities for observed generation USA
+caps_irena = pd.read_csv(usa_path + '/IRENA_caps.csv').iloc[:,3:].T
+caps_irena.columns = ['caps_MW']
+# cumulative capacity
+capc = caps_irena.caps_MW.str.replace(' ','').astype(np.int64).values
+# added capacity
+cap = np.append(capc[0],capc[1:]-capc[:-1])
+comdate = caps_irena.index.values.astype(np.int64)
+# get capacities time series
+cap_usaIRENA = get_cap_df(cap,comdate).tz_localize('UTC').tz_convert('US/Central')
+
 # aggregate daily or monthly where needed
 cap_usam = cap_usa.resample('M').sum()
 cap_IAm = cap_IA.resample('M').sum()
@@ -73,7 +85,7 @@ cap_BPAm = cap_BPA.resample('M').sum()
 cap_BPAd = cap_BPA.resample('D').sum()
 cap_BPAh = cap_BPA
 cap_NEm = cap_NE.resample('M').sum()
-
+cap_usaIm = cap_usaIRENA.resample('M').sum()
 
 ### Analysis capacity factors
 
@@ -101,10 +113,10 @@ wp_USA = pd.concat([wpE,wpE_GWA,wpM,wpM_GWA],axis=1).tz_localize('UTC').tz_conve
 wp_USA.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
 # aggregate monthly
 wp_USAm = wp_USA.resample('M').sum()
-# combine data
-comp_USAm = pd.concat([wp_USAm,prod_USAm.resample('M').sum().wp_obs*10**6],axis=1)
-# calculate capacity factors
-cf_USAm = comp_USAm.div(cap_usam,axis=0).dropna()
+# combine data and calculate capacity factors
+cf_USAm = pd.concat([wp_USAm.div(cap_usam,axis=0),
+                      prod_USAm.resample('M').sum().wp_obs*10**6/(cap_usaIm*10**3)],axis=1).dropna()[1:]
+cf_USAm.columns = np.append(wp_USAm.columns,'wp_obs')
 # Analyse
 stats_USAm = pd.DataFrame({'ERA5':stats(cf_USAm.ERA5,cf_USAm.wp_obs,False),
                            'ERA5_GWA':stats(cf_USAm.ERA5_GWA,cf_USAm.wp_obs,False),
