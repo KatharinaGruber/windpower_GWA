@@ -23,7 +23,7 @@ from paths_usa import mer_path
 
 
 yms = np.char.replace(np.arange(np.datetime64('2000-12'),
-                                np.datetime64('2019-12')).astype('str'),'-','')
+                                np.datetime64('2020-01')).astype('str'),'-','')
 region = 'USA'
 
 user = 'RE_EXTREME'
