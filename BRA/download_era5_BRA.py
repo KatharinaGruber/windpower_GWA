@@ -28,8 +28,8 @@ YEARS = range(2006, 2020)
 MONTHS = list(range(1, 13))
 
 north = 5.5
-south = -33
-west = -74
+south = -36
+west = -74.1
 east = -33
 
 setup_logging(op.join(DOWNLOAD_DIR, 'download.log'))
