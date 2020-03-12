@@ -66,7 +66,7 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
     # get BPA windparks
     BPA_parks = pd.read_csv(usa_path+"/BPA_windparks.csv")
     # get windturbine locations/names
-    windturbines = pd.read_csv(usa_path+"/windturbines_usa.csv",delimiter=';')
+    windturbines = pd.read_csv(usa_path+"/uswtdb_v2_3_20200109.csv",delimiter=',')
     # get labels
     labels = pd.read_csv(usa_path + '/labels_turbine_data.csv')
     # get indices of BPA wind parks from wind turbine dataset

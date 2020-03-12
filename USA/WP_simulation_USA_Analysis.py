@@ -43,7 +43,7 @@ def get_cap_df(cap,comdate):
 # get BPA windparks
 BPA_parks = pd.read_csv(usa_path+"/BPA_windparks.csv")
 # get windturbine locations/names
-windturbines = pd.read_csv(usa_path+"/windturbines_usa.csv",delimiter=';')
+windturbines = pd.read_csv(usa_path+"/uswtdb_v2_3_20200109.csv",delimiter=',')
 wt = pd.read_csv(usa_path + "/turbine_data.csv",parse_dates = ['time'])
 # get aggregated turbine data
 turb_mer = pd.read_csv(usa_path + "/turbine_data_mer.csv",parse_dates = ['commissioning']).drop('Unnamed: 0',axis=1)
