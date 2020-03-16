@@ -26,10 +26,18 @@ def get_cap_df(cap,comdate):
     # if only years given for commissioning dates -> gradual capacity increase over year, full capacity at end of year
     if type(cap_cum.index.values[0]) == np.int64:
         cap_cum.index = [np.datetime64(str(int(year))+"-12-31 23:00:00") for year in cap_cum.index.values]
+        # create yearly dates at yearends
+        drcc = pd.date_range(np.datetime64('1999-12-31 23:00:00'),
+                             np.datetime64('2019-12-31 23:00:00'),freq= 'y')
+        cap_cum = pd.Series(drcc.map(cap_cum),index = drcc)
+        # if first year emtpy: either year before or 0 if nothing before
+        if(sum(com.index<2000) > 0):
+            cap_cum[0] = com.cumsum()[com.index<2000].max()
+        else:
+            cap_cum[0] = 0
         # if missing years -> put capacity of year before
-        drcc = pd.date_range(cap_cum.index[0],cap_cum.index[-1],freq = 'y')
-        cap_cum = pd.Series(drcc.map(cap_cum),index = drcc).ffill()
-    dr = pd.date_range('1/1/2000','31/12/2018 23:00:00',freq = 'h')
+        cap_cum = cap_cum.ffill()
+    dr = pd.date_range('1/1/2000','31/12/2019 23:00:00',freq = 'h')
     cap_ts = pd.Series(dr.map(cap_cum),index = dr)
     cap_ts[0] = cap_cum[cap_cum.index<=pd.Timestamp('2000-01-01')].max()
     if type(comdate[0]) == np.int64:
@@ -39,6 +47,22 @@ def get_cap_df(cap,comdate):
     
     
 ### Prepare wind park data - Installed capacities
+
+# prepare states and regions of USA
+states = ['USA','NewEng','CT','ME','MA','NH','RI','VT','MidAtl','NJ','NY','PA','ENC','IL','IN','MI','OH','WI','WNC','IA','KS','MN',
+'MO','NE','ND','SD','SouAtl','DE','DC','FL','GA','MD','NC','SC','VA','WV','ESC','AL','KY','MS','TN','WSC','AR','LA','OK',
+'TX','Mou','AZ','CO','ID','MT','NV','NM','UT','WY','PacCon','CA','OR','WA','PacNon','AK','HI']
+
+MidAtl = ['NY','NJ','PA','DE','MD','WA','VA','WV']
+SouAtl = ['DE','MD','VA','WV','NC','SC','GA','FL','DC']
+PacCon = ['CA','OR','WA']
+PacNon = ['AK','HI']
+ENC = ['IL','IN','MI','OH','WI']
+WNC = ['IA','MN','MS','NE','ND','SD']
+ESC = ['AL','KY','MS','TN']
+WSC = ['AR','LA','OK','TX']
+Mou = ['CO','WY','UT','NM','NV','ID','AZ','MT']
+NewEng = ['CT','NH','ME','MA','RI','VT']
 
 # get BPA windparks
 BPA_parks = pd.read_csv(usa_path+"/BPA_windparks.csv")
@@ -63,7 +87,27 @@ cap_BPA = get_cap_df(wt.capacity[pBPA.p].values,
                      pd.DatetimeIndex(wt.time[pBPA.p]).year.values).tz_localize('UTC')
 cap_NE = get_cap_df(NE_turbines.capacity.values,
                     pd.DatetimeIndex(NE_turbines.commissioning).year.values).tz_localize('UTC').tz_convert('US/Eastern')
-                    
+
+# get capacities of all regions in USA
+cap_states = pd.DataFrame()
+for state in np.array(states)[[len(s)==2 for s in states]]:
+    if len(turb_mer.capacity[turb_mer.state==state].values)>0:
+        cap_s = get_cap_df(turb_mer.capacity[turb_mer.state==state].values,
+                           pd.DatetimeIndex(turb_mer.commissioning[turb_mer.state==state]).year.values).tz_localize('UTC').tz_convert('US/Central')
+        cap_states = pd.concat([cap_states,cap_s],axis=1)
+cap_states.columns = np.array(states)[[s in turb_mer.state.unique() for s in states]]
+
+cap_NewEng = cap_states[np.array(NewEng)[[s in turb_mer.state.unique() for s in NewEng]]].fillna(0).sum(axis=1)
+cap_MidAtl = cap_states[np.array(MidAtl)[[s in turb_mer.state.unique() for s in MidAtl]]].fillna(0).sum(axis=1)
+cap_SouAtl = cap_states[np.array(SouAtl)[[s in turb_mer.state.unique() for s in SouAtl]]].fillna(0).sum(axis=1)
+cap_PacCon = cap_states[np.array(PacCon)[[s in turb_mer.state.unique() for s in PacCon]]].fillna(0).sum(axis=1)
+cap_PacNon = cap_states[np.array(PacNon)[[s in turb_mer.state.unique() for s in PacNon]]].fillna(0).sum(axis=1)
+cap_ENC = cap_states[np.array(ENC)[[s in turb_mer.state.unique() for s in ENC]]].fillna(0).sum(axis=1)
+cap_WNC = cap_states[np.array(WNC)[[s in turb_mer.state.unique() for s in WNC]]].fillna(0).sum(axis=1)
+cap_ESC = cap_states[np.array(ESC)[[s in turb_mer.state.unique() for s in ESC]]].fillna(0).sum(axis=1)
+cap_WSC = cap_states[np.array(WSC)[[s in turb_mer.state.unique() for s in WSC]]].fillna(0).sum(axis=1)
+cap_Mou = cap_states[np.array(Mou)[[s in turb_mer.state.unique() for s in Mou]]].fillna(0).sum(axis=1)
+
 # get IRENA capacities for observed generation USA
 caps_irena = pd.read_csv(usa_path + '/IRENA_caps.csv').iloc[:,3:].T
 caps_irena.columns = ['caps_MW']
@@ -87,21 +131,39 @@ cap_BPAh = cap_BPA
 cap_NEm = cap_NE.resample('M').sum()
 cap_usaIm = cap_usaIRENA.resample('M').sum()
 
+cap_statesm = cap_states.resample('M').sum()
+cap_NewEngm = cap_NewEng.resample('M').sum()
+cap_MidAtlm = cap_MidAtl.resample('M').sum()
+cap_SouAtlm = cap_SouAtl.resample('M').sum()
+cap_PacConm = cap_PacCon.resample('M').sum()
+cap_PacNonm = cap_PacNon.resample('M').sum()
+cap_ENCm = cap_ENC.resample('M').sum()
+cap_WNCm = cap_WNC.resample('M').sum()
+cap_ESCm = cap_ESC.resample('M').sum()
+cap_WSCm = cap_WSC.resample('M').sum()
+cap_Moum = cap_Mou.resample('M').sum()
+
 ### Analysis capacity factors
 
 ## USA monthly
 # Load production data
 # Source: https://www.eia.gov/electricity/data/browser/#/topic/0?agg=1,0,2&fuel=008&geo=vvvvvvvvvvvvo&sec=o3g&linechart=ELEC.GEN.WND-US-99.M~ELEC.GEN.WND-IA-99.M~ELEC.GEN.WND-TX-99.M&columnchart=ELEC.GEN.WND-US-99.M~ELEC.GEN.WND-IA-99.M~ELEC.GEN.WND-TX-99.M&map=ELEC.GEN.WND-US-99.M&freq=M&start=200101&end=201903&chartindexed=0&ctype=linechart&ltype=pin&rtype=s&pin=&rse=0&maptype=0
-prod_USAm = pd.read_csv(usa_path+"/generation_data/USA_monthly/Net_generation_wind_all_sectors_monthly.csv",header=4)
+prod_USAm = pd.read_csv(usa_path+"/generation_data/USA_monthly/Net_generation_for_wind.csv",header=4)
 # arrange data
-# rename columns
-prod_USAm.columns = ['time','wp_obs','Iowa','Texas']
-# sort indices
-prod_USAm = prod_USAm[~np.isnan(prod_USAm.wp_obs)].sort_index(axis=0 ,ascending=False)
-# create datetime index
-prod_USAm = prod_USAm.set_index(pd.to_datetime(prod_USAm.time.values)).drop(['time'],axis=1)
-# cut after 2018
-prod_USAm = prod_USAm[prod_USAm.index < np.datetime64("2019-01-01")].tz_localize('US/Central')
+# tidy data
+prod_USAm = prod_USAm[[': all sectors' in s for s in prod_USAm.description]].replace('--',np.nan).replace('NM',np.nan).drop(['units','source key'],axis=1)
+prod_USAm['description'] = prod_USAm.description.str.replace(' : all sectors','')
+# make production numeric
+prod_USAm.iloc[:,1:] = prod_USAm.iloc[:,1:].astype(np.float)
+# transpose to datetime as index and regions as columns
+prod_USAm = prod_USAm.set_index('description').transpose()
+# convert dates to datetime format
+dates = prod_USAm.reset_index()['index'].str.split(expand=True)
+prod_USAm.index = pd.to_datetime(['{}-{}-01'.format(y, m) for y, m in zip(dates[1].astype(str), dates[0].astype(str))])
+# cut after 2019
+prod_USAm = prod_USAm[prod_USAm.index < np.datetime64("2020-01-01")].tz_localize('US/Central')
+# adapt column names
+prod_USAm.columns = states
 # Prepare simulated data
 # load data
 wpE = xr.open_dataset(results_path+"/windpower_USA_ERA5.nc").to_dataframe()
@@ -115,7 +177,7 @@ wp_USA.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
 wp_USAm = wp_USA.resample('M').sum()
 # combine data and calculate capacity factors
 cf_USAm = pd.concat([wp_USAm.div(cap_usam,axis=0),
-                      prod_USAm.resample('M').sum().wp_obs*10**6/(cap_usaIm*10**3)],axis=1).dropna()[1:]
+                      (prod_USAm.resample('M').sum()['USA']*10**6/(cap_usaIm*10**3))],axis=1).dropna()
 cf_USAm.columns = np.append(wp_USAm.columns,'wp_obs')
 # Analyse
 stats_USAm = pd.DataFrame({'ERA5':stats(cf_USAm.ERA5,cf_USAm.wp_obs,False),
@@ -135,80 +197,59 @@ stats_USAm.to_csv(results_path+'/stats_USAm.csv')
 stats_USAm_r.to_csv(results_path+'/stats_USAm_r.csv',sep=';')
 
 
-## Iowa monthly
-# Source: same as USA
-# extract production of Iowa
-prod_IAm = pd.DataFrame({'wp_obs':prod_USAm.Iowa},
-                        index = prod_USAm.index)
+## regions monthly
 # Prepare simulated data
 # load data
-wp_IAE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").sel({'state':"IA"}).to_dataframe().drop('state',axis=1)
-wp_IAE_GWA = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc").sel({'state':"IA"}).to_dataframe().drop('state',axis=1)
-wp_IAM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").sel({'state':"IA"}).to_dataframe().drop('state',axis=1)
-wp_IAM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").sel({'state':"IA"}).to_dataframe().drop('state',axis=1)
-# merge data
-wp_IAh = pd.concat([wp_IAE,wp_IAE_GWA,wp_IAM,wp_IAM_GWA],axis=1).tz_localize('UTC').tz_convert('US/Central')
-wp_IAh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
-# sum up monthly
-comp_IAm = wp_IAh.resample('M').sum()
-# add production data
-comp_IAm = pd.concat([comp_IAm,prod_IAm.resample('M').sum().wp_obs*10**6],axis=1)
-# calculate capacity factors
-cf_IAm = comp_IAm.div(cap_IAm,axis=0).dropna()
-# Analyse
-stats_IAm = pd.DataFrame({'ERA5':stats(cf_IAm.ERA5,cf_IAm.wp_obs,False),
-                          'ERA5_GWA':stats(cf_IAm.ERA5_GWA,cf_IAm.wp_obs,False),
-                          'MERRA2':stats(cf_IAm.MERRA2,cf_IAm.wp_obs,False),
-                          'MERRA2_GWA':stats(cf_IAm.MERRA2_GWA,cf_IAm.wp_obs,False),
-                          'obs':[np.nan,np.nan,np.nan,cf_IAm.wp_obs.mean()]},
-                         index = ['cor','rmse','mbe','avg'])
-stats_IAm_r = pd.DataFrame({'ERA5':stats(cf_IAm.ERA5,cf_IAm.wp_obs),
-                            'ERA5_GWA':stats(cf_IAm.ERA5_GWA,cf_IAm.wp_obs),
-                            'MERRA2':stats(cf_IAm.MERRA2,cf_IAm.wp_obs),
-                            'MERRA2_GWA':stats(cf_IAm.MERRA2_GWA,cf_IAm.wp_obs),
-                            'obs':[np.nan,np.nan,np.nan,round(cf_IAm.wp_obs.mean(),2)]},
-                           index = ['cor','rmse','mbe','avg'])
+wpE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").to_dataframe()
+wpE_GWA = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc").to_dataframe()
+wpM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").to_dataframe()
+wpM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").to_dataframe()
+# Errors:
+# - ESC: lots of 0 until 2005
+# - NewEng: until 2007 wp_obs low and nearly constant
+# prepare stats dataframes
+stats_regionsm = pd.DataFrame()
+stats_regionsm_r = pd.DataFrame()
+# define order of regions, states in regions and capacities
+regions = prod_USAm.columns[[len(r)>2 for r in prod_USAm.columns]][1:]
+states_reg = [NewEng,MidAtl,ENC,WNC,SouAtl,ESC,WSC,Mou,PacCon,PacNon]
+caps_reg = [cap_NewEngm,cap_MidAtlm,cap_ENCm,cap_WNCm,cap_SouAtlm,cap_ESCm,cap_WSCm,cap_Moum,cap_PacConm,cap_PacNonm]
+for (state_reg,region,cap_regm) in zip(*(states_reg,regions,caps_reg)):
+    wpE_reg = wpE.loc[state_reg].wp.unstack().transpose().sum(axis=1)
+    wpE_GWA_reg = wpE_GWA.loc[state_reg].wp.unstack().transpose().sum(axis=1)
+    wpM_reg = wpM.loc[state_reg].wp.unstack().transpose().sum(axis=1)
+    wpM_GWA_reg = wpM_GWA.loc[state_reg].wp.unstack().transpose().sum(axis=1)
+    prod_regm = prod_USAm[region]
+    # merge data
+    wp_reg = pd.concat([wpE_reg,wpE_GWA_reg,wpM_reg,wpM_GWA_reg],axis=1).tz_localize('UTC').tz_convert('US/Central')
+    wp_reg.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
+    # aggregate monthly
+    wp_regm = wp_reg.resample('M').sum()
+    # combine data and calculate capacity factors
+    cf_regm = pd.concat([wp_regm.div(cap_regm,axis=0),
+                          (prod_regm.resample('M').sum()*10**6/cap_regm)],axis=1).dropna()
+    cf_regm.columns = np.append(wp_regm.columns,'wp_obs')
+    # Analyse
+    stats_regm = pd.DataFrame({'ERA5':stats(cf_regm.ERA5,cf_regm.wp_obs,False),
+                               'ERA5_GWA':stats(cf_regm.ERA5_GWA,cf_regm.wp_obs,False),
+                               'MERRA2':stats(cf_regm.MERRA2,cf_regm.wp_obs,False),
+                               'MERRA2_GWA':stats(cf_regm.MERRA2_GWA,cf_regm.wp_obs,False),
+                               'obs':[np.nan,np.nan,np.nan,cf_regm.wp_obs.mean()]},
+                              index = ['cor','rmse','mbe','avg'])
+    stats_regm_r = pd.DataFrame({'ERA5':stats(cf_regm.ERA5,cf_regm.wp_obs),
+                               'ERA5_GWA':stats(cf_regm.ERA5_GWA,cf_regm.wp_obs),
+                               'MERRA2':stats(cf_regm.MERRA2,cf_regm.wp_obs),
+                               'MERRA2_GWA':stats(cf_regm.MERRA2_GWA,cf_regm.wp_obs),
+                               'obs':[np.nan,np.nan,np.nan,round(cf_regm.wp_obs.mean(),2)]},
+                              index = ['cor','rmse','mbe','avg'])
+    stats_regm.index = pd.MultiIndex.from_product([[region],stats_regm.index.values], names=['state', 'param'])
+    stats_regm_r.index = pd.MultiIndex.from_product([[region],stats_regm_r.index.values], names=['state', 'param'])
+    # concatenate results
+    stats_regionsm = pd.concat([stats_regionsm,stats_regm])
+    stats_regionsm_r = pd.concat([stats_regionsm_r,stats_regm_r])
 # save statistical results
-stats_IAm.to_csv(results_path+'/stats_IAm.csv')
-stats_IAm_r.to_csv(results_path+'/stats_IAm_r.csv',sep=';')
-
-
-## Texas monthly
-# Source: same as USA
-# extract production of Texas
-prod_TXm = pd.DataFrame({'wp_obs':prod_USAm.Texas},
-                        index = prod_USAm.index)
-# Prepare simulated data
-# load data
-wp_TXE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").sel({'state':"TX"}).to_dataframe().drop('state',axis=1)
-wp_TXE_GWA = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc").sel({'state':"TX"}).to_dataframe().drop('state',axis=1)
-wp_TXM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").sel({'state':"TX"}).to_dataframe().drop('state',axis=1)
-wp_TXM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").sel({'state':"TX"}).to_dataframe().drop('state',axis=1)
-# merge data
-wp_TXh = pd.concat([wp_TXE,wp_TXE_GWA,wp_TXM,wp_TXM_GWA],axis=1).tz_localize('UTC').tz_convert('US/Central')
-wp_TXh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
-# aggregate monthly
-comp_TXm = wp_TXh.resample('M').sum()
-# add production data
-comp_TXm = pd.concat([comp_TXm,prod_TXm.resample('M').sum().wp_obs*10**6],axis=1)
-# calculate capacity factors
-cf_TXm = comp_TXm.div(cap_TXm,axis=0).dropna()
-# Analyse
-stats_TXm = pd.DataFrame({'ERA5':stats(cf_TXm.ERA5,cf_TXm.wp_obs,False),
-                          'ERA5_GWA':stats(cf_TXm.ERA5_GWA,cf_TXm.wp_obs,False),
-                          'MERRA2':stats(cf_TXm.MERRA2,cf_TXm.wp_obs,False),
-                          'MERRA2_GWA':stats(cf_TXm.MERRA2_GWA,cf_TXm.wp_obs,False),
-                          'obs':[np.nan,np.nan,np.nan,cf_TXm.wp_obs.mean()]},
-                         index = ['cor','rmse','mbe','avg'])
-stats_TXm_r = pd.DataFrame({'ERA5':stats(cf_TXm.ERA5,cf_TXm.wp_obs),
-                          'ERA5_GWA':stats(cf_TXm.ERA5_GWA,cf_TXm.wp_obs),
-                          'MERRA2':stats(cf_TXm.MERRA2,cf_TXm.wp_obs),
-                          'MERRA2_GWA':stats(cf_TXm.MERRA2_GWA,cf_TXm.wp_obs),
-                          'obs':[np.nan,np.nan,np.nan,round(cf_TXm.wp_obs.mean(),2)]},
-                         index = ['cor','rmse','mbe','avg'])
-# save statistical results
-stats_TXm.to_csv(results_path+'/stats_TXm.csv')
-stats_TXm_r.to_csv(results_path+'/stats_TXm_r.csv',sep=';')
+stats_regionsm.to_csv(results_path+'/stats_regionsm.csv')
+stats_regionsm_r.to_csv(results_path+'/stats_regionsm_r.csv',sep=';')
 
 
 ## Texas hourly
@@ -230,8 +271,8 @@ prod_TXh = prod_TXh[~prod_TXh.index.duplicated()]*10**3
 # load simulated data
 wp_TXE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").sel(state='TX').drop('state').to_dataframe()
 wp_TXE_GWA = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc").sel(state='TX').drop('state').to_dataframe()
-wp_TXM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").sel(state='TX').drop('state').to_dataframe()
-wp_TXM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").sel(state='TX').drop('state').to_dataframe()
+wp_TXM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").sel(state='TX').drop('state').to_dataframe().resample('h').sum() # resample merra because 2019 different format
+wp_TXM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").sel(state='TX').drop('state').to_dataframe().resample('h').sum()
 # merge
 comp_TXh = pd.concat([wp_TXE,wp_TXE_GWA,wp_TXM,wp_TXM_GWA],axis=1)
 comp_TXh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -259,7 +300,7 @@ stats_TXh.to_csv(results_path+'/stats_TXh.csv')
 stats_TXh_r.to_csv(results_path+'/stats_TXh_r.csv',sep=';')
 
 
-## Texas Daily
+# Texas Daily
 # Prepare data
 # aggregate per day
 comp_TXd = comp_TXh.tz_convert('US/Central').resample('D').sum()
@@ -297,7 +338,7 @@ col = pd.DataFrame({'dat1':[2,2,3,3],
                     'lines':[14,16,16,16]},
                    index = ['07','08','09','10'])
 # for years 2011 to 2019 only lines are different
-lines = pd.DataFrame({'x': [18,18,18,18,18,18,21,19,19]},
+lines = pd.DataFrame({'x': [18,18,18,18,18,18,21,19,23]},
                      index = [11,12,13,14,15,16,17,18,19])
 for year in ['07','08','09']:
     BPAxl = pd.read_excel(usa_path+"/generation_data/BPA_5min/TotalWindLoad_5Min_"+year+".xls",
@@ -342,7 +383,7 @@ BPAxl_dat = pd.DataFrame({'wp_obs':pd.concat([BPAxl_drop.iloc[:,col.dat1[year]],
                                             pd.to_datetime(BPAxl.iloc[:,col.time2[year]])]).values)
 BPAtz = BPAxl_dat.tz_localize('US/Pacific',ambiguous='infer').interpolate()
 prod_BPA5min = pd.concat([prod_BPA5min,BPAtz],axis=0)
-for year in range(11,19):
+for year in range(11,20):
     # read data from two sheets separately
     BPAxl1 = pd.read_excel(usa_path+"/generation_data/BPA_5min/WindGenTotalLoadYTD_20"+str(year)+".xls",
                            sheet_name="January-June",
@@ -359,7 +400,7 @@ for year in range(11,19):
     # concatenate years
     prod_BPA5min = pd.concat([prod_BPA5min,BPAdat],axis=0)
 # select only data of interest and convert to UTC
-prod_BPA5min = prod_BPA5min[prod_BPA5min.index<pd.to_datetime("2019-01-01",utc=True)].tz_convert('UTC')
+prod_BPA5min = prod_BPA5min[prod_BPA5min.index<pd.to_datetime("2020-01-01",utc=True)].tz_convert('UTC')
 # aggregate hourly  
 prod_BPAh = prod_BPA5min.resample('H').sum()/12* 10**3
 
@@ -367,8 +408,8 @@ prod_BPAh = prod_BPA5min.resample('H').sum()/12* 10**3
 # load data
 wp_BPAE = xr.open_dataset(results_path+"/windpower_BPA_ERA5.nc").to_dataframe()
 wp_BPAE_GWA = xr.open_dataset(results_path+"/windpower_BPA_ERA5_GWA.nc").to_dataframe()
-wp_BPAM = xr.open_dataset(results_path+"/windpower_BPA_MERRA2.nc").to_dataframe()
-wp_BPAM_GWA = xr.open_dataset(results_path+"/windpower_BPA_MERRA2_GWA.nc").to_dataframe()
+wp_BPAM = xr.open_dataset(results_path+"/windpower_BPA_MERRA2.nc").to_dataframe().resample('h').sum() # resample merra because 2019 different format
+wp_BPAM_GWA = xr.open_dataset(results_path+"/windpower_BPA_MERRA2_GWA.nc").to_dataframe().resample('h').sum()
 # merge data
 comp_BPAh = pd.concat([wp_BPAE,wp_BPAE_GWA,wp_BPAM,wp_BPAM_GWA],axis=1)
 comp_BPAh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -470,8 +511,8 @@ prod_NE = prod_NE.tz_localize('US/Eastern')
 # load data
 wp_NEE = xr.open_dataset(results_path+"/windpower_NewEngland_ERA5.nc").to_dataframe()
 wp_NEE_GWA = xr.open_dataset(results_path+"/windpower_NewEngland_ERA5_GWA.nc").to_dataframe()
-wp_NEM = xr.open_dataset(results_path+"/windpower_NewEngland_MERRA2.nc").to_dataframe()
-wp_NEM_GWA = xr.open_dataset(results_path+"/windpower_NewEngland_MERRA2_GWA.nc").to_dataframe()
+wp_NEM = xr.open_dataset(results_path+"/windpower_NewEngland_MERRA2.nc").to_dataframe().resample('h').sum() # resample merra because 2019 different format
+wp_NEM_GWA = xr.open_dataset(results_path+"/windpower_NewEngland_MERRA2_GWA.nc").to_dataframe().resample('h').sum()
 # merge data
 comp_NEh = pd.concat([wp_NEE,wp_NEE_GWA,wp_NEM,wp_NEM_GWA],axis=1)
 comp_NEh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
