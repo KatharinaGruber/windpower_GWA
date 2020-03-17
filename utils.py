@@ -140,6 +140,8 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
         timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
         locs = np.concatenate([np.array([wp2.location.values[i]]*len(timespans[i])) for i in range(len(timespans))])
         timespans = np.concatenate(timespans)
+        # add 30 min after 2019 - time format changed
+        timespans[pd.DatetimeIndex(timespans).year>=2019] = timespans[pd.DatetimeIndex(timespans).year>=2019] + np.timedelta64(30,'m')
         # make sure there are no indices before or after wind time series
         locs_s = np.array(locs)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
         timespans_s = np.array(timespans)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
@@ -300,6 +302,8 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
         timespans = [np.array(pd.date_range(pd.to_datetime(str(y)+'-01-01 00:00:00'),pd.to_datetime(str(y)+'-12-31 23:00:00'),freq='H')) for y in commissioning]
         locs = np.concatenate([np.array([wp2.location.values[i]]*len(timespans[i])) for i in range(len(timespans))])
         timespans = np.concatenate(timespans)
+        # add 30 min after 2019 - time format changed
+        timespans[pd.DatetimeIndex(timespans).year>=2019] = timespans[pd.DatetimeIndex(timespans).year>=2019] + np.timedelta64(30,'m')
         # make sure there are no indices before or after wind time series
         locs_s = np.array(locs)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
         timespans_s = np.array(timespans)[(timespans>=wp2.time[0].values)&(timespans<=wp2.time[-1].values)]
