@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import argparse
 import os
 import pandas as pd
 import xarray as xr
@@ -17,6 +18,17 @@ from dask.diagnostics import ProgressBar
 ProgressBar().register()
 
 from paths_usa import *
+
+parser = argparse.ArgumentParser(description='Insert optionally GWA')
+parser.add_argument('-GWA')
+args = parser.parse_args()
+if(args.GWA == None):
+    GWA = 3
+else:
+    GWA = args.GWA
+
+if GWA == "2":
+    results_path = results_path + '/results_GWA2'
 
 
 # define function for preparing capacity time series

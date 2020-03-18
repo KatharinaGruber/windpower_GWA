@@ -1,3 +1,4 @@
+import argparse
 import datetime
 import glob
 import math
@@ -15,6 +16,16 @@ ProgressBar().register()
 
 from paths_usa import *
 
+parser = argparse.ArgumentParser(description='Insert optionally GWA')
+parser.add_argument('-GWA')
+args = parser.parse_args()
+if(args.GWA == None):
+    GWA = 3
+else:
+    GWA = args.GWA
+
+if GWA == "2":
+    results_path = results_path + '/results_GWA2'
 
 # sum up states
 if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:

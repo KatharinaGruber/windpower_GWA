@@ -29,10 +29,19 @@ ProgressBar().register()
 
 from paths_usa import *
 
-parser = argparse.ArgumentParser(description='Insert state')
+# get state and GWA version
+parser = argparse.ArgumentParser(description='Insert state and optionally GWA')
 parser.add_argument('-state')
+parser.add_argument('-GWA')
 args = parser.parse_args()
 state = args.state
+if(args.GWA == None):
+    GWA = 3
+else:
+    GWA = args.GWA
+
+if GWA == "2":
+    results_path = results_path + '/results_GWA2'
 
 
 outfile = results_path + '/windpower_??_ERA5_GWA.nc'
@@ -42,7 +51,20 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
     alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'time': 38})
     # with GWA
     turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
-    GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA100m.tif')
+    if GWA == 3:
+        if state == 'PR':
+            GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_PR100m.tif')
+        else:
+            GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_USA100m.tif')
+    else:
+        if state == 'AK':
+            GWA = xr.open_rasterio(usa_path+'/GWA/GWA_AK100m.tif')
+        elif state == 'HI':
+            GWA = xr.open_rasterio(usa_path+'/GWA/GWA_HI100m.tif')
+        elif state == 'PR':
+            GWA = xr.open_rasterio(usa_path+'/GWA/GWA_PR100m.tif')
+        else:
+            GWA = xr.open_rasterio(usa_path+'/GWA/GWA_USA100m.tif')
     ind = turbine_data_era_gwa.state == state
 
     print('calculating ERA5 ' + state + ' GWA')
