@@ -28,7 +28,9 @@ else:
     GWA = args.GWA
 
 if GWA == "2":
-    results_path = results_path + '/results_GWA2'
+    results_pathg = results_path + '/results_GWA2'
+else:
+    results_pathg = results_path
 
 
 # define function for preparing capacity time series
@@ -179,9 +181,9 @@ prod_USAm.columns = states
 # Prepare simulated data
 # load data
 wpE = xr.open_dataset(results_path+"/windpower_USA_ERA5.nc").to_dataframe()
-wpE_GWA = xr.open_dataset(results_path+"/windpower_USA_ERA5_GWA.nc").to_dataframe()
+wpE_GWA = xr.open_dataset(results_pathg+"/windpower_USA_ERA5_GWA.nc").to_dataframe()
 wpM = xr.open_dataset(results_path+"/windpower_USA_MERRA2.nc").to_dataframe()
-wpM_GWA = xr.open_dataset(results_path+"/windpower_USA_MERRA2_GWA.nc").to_dataframe()
+wpM_GWA = xr.open_dataset(results_pathg+"/windpower_USA_MERRA2_GWA.nc").to_dataframe()
 # merge data
 wp_USA = pd.concat([wpE,wpE_GWA,wpM,wpM_GWA],axis=1).tz_localize('UTC').tz_convert('US/Central')
 wp_USA.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -205,17 +207,17 @@ stats_USAm_r = pd.DataFrame({'ERA5':stats(cf_USAm.ERA5,cf_USAm.wp_obs),
                              'obs':[np.nan,np.nan,np.nan,round(cf_USAm.wp_obs.mean(),2)]},
                             index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_USAm.to_csv(results_path+'/stats_USAm.csv')
-stats_USAm_r.to_csv(results_path+'/stats_USAm_r.csv',sep=';')
+stats_USAm.to_csv(results_pathg+'/stats_USAm.csv')
+stats_USAm_r.to_csv(results_pathg+'/stats_USAm_r.csv',sep=';')
 
 
 ## regions monthly
 # Prepare simulated data
 # load data
 wpE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").to_dataframe()
-wpE_GWA = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc").to_dataframe()
+wpE_GWA = xr.open_dataset(results_pathg+"/windpower_states_ERA5_GWA.nc").to_dataframe()
 wpM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").to_dataframe()
-wpM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").to_dataframe()
+wpM_GWA = xr.open_dataset(results_pathg+"/windpower_states_MERRA2_GWA.nc").to_dataframe()
 # Errors:
 # - ESC: lots of 0 until 2005
 # - NewEng: until 2007 wp_obs low and nearly constant
@@ -260,8 +262,55 @@ for (state_reg,region,cap_regm) in zip(*(states_reg,regions,caps_reg)):
     stats_regionsm = pd.concat([stats_regionsm,stats_regm])
     stats_regionsm_r = pd.concat([stats_regionsm_r,stats_regm_r])
 # save statistical results
-stats_regionsm.to_csv(results_path+'/stats_regionsm.csv')
-stats_regionsm_r.to_csv(results_path+'/stats_regionsm_r.csv',sep=';')
+stats_regionsm.to_csv(results_pathg+'/stats_regionsm.csv')
+stats_regionsm_r.to_csv(results_pathg+'/stats_regionsm_r.csv',sep=';')
+
+## states monthly
+# Prepare simulated data
+# load data
+wpE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").to_dataframe()
+wpE_GWA = xr.open_dataset(results_pathg+"/windpower_states_ERA5_GWA.nc").to_dataframe()
+wpM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").to_dataframe()
+wpM_GWA = xr.open_dataset(results_pathg+"/windpower_states_MERRA2_GWA.nc").to_dataframe()
+stats_statesm = pd.DataFrame()
+stats_statesm_r = pd.DataFrame()
+# drop states that have no data
+prod_USAm = prod_USAm[prod_USAm.columns[(~prod_USAm.isna()).sum()!=0]]
+states_USAm = prod_USAm.columns[[len(s)==2 for s in prod_USAm.columns]]
+for state in np.array(states_USAm)[[s in turb_mer.state.unique() for s in states_USAm]]:
+    # merge data
+    wp_st = pd.concat([wpE.wp.loc[state],
+                       wpE_GWA.wp.loc[state],
+                       wpM.wp.loc[state],
+                       wpM_GWA.wp.loc[state]],axis=1).tz_localize('UTC').tz_convert('US/Central')
+    wp_st.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
+    # aggregate monthly
+    wp_stm = wp_st.resample('M').sum()
+    # combine data and calculate capacity factors
+    cf_stm = pd.concat([wp_stm.div(cap_statesm[state],axis=0),
+                          (prod_USAm.resample('M').sum()[state]*10**6/(cap_statesm[state]))],axis=1).replace(np.inf, np.nan).dropna()[1:]
+    cf_stm.columns = np.append(wp_stm.columns,'wp_obs')
+    # Analyse
+    stats_stm = pd.DataFrame({'ERA5':stats(cf_stm.ERA5,cf_stm.wp_obs,False),
+                              'ERA5_GWA':stats(cf_stm.ERA5_GWA,cf_stm.wp_obs,False),
+                              'MERRA2':stats(cf_stm.MERRA2,cf_stm.wp_obs,False),
+                              'MERRA2_GWA':stats(cf_stm.MERRA2_GWA,cf_stm.wp_obs,False),
+                              'obs':[np.nan,np.nan,np.nan,cf_stm.wp_obs.mean()]},
+                             index = ['cor','rmse','mbe','avg'])
+    stats_stm_r = pd.DataFrame({'ERA5':stats(cf_stm.ERA5,cf_stm.wp_obs),
+                                'ERA5_GWA':stats(cf_stm.ERA5_GWA,cf_stm.wp_obs),
+                                'MERRA2':stats(cf_stm.MERRA2,cf_stm.wp_obs),
+                                'MERRA2_GWA':stats(cf_stm.MERRA2_GWA,cf_stm.wp_obs),
+                                'obs':[np.nan,np.nan,np.nan,round(cf_stm.wp_obs.mean(),2)]},
+                              index = ['cor','rmse','mbe','avg'])
+    stats_stm.index = pd.MultiIndex.from_product([[state],stats_stm.index.values], names=['state', 'param'])
+    stats_stm_r.index = pd.MultiIndex.from_product([[state],stats_stm_r.index.values], names=['state', 'param'])
+    # concatenate results
+    stats_statesm = pd.concat([stats_statesm,stats_stm])
+    stats_statesm_r = pd.concat([stats_statesm_r,stats_stm_r])
+# save statistical results
+stats_statesm.to_csv(results_pathg+'/stats_statesm.csv')
+stats_statesm_r.to_csv(results_pathg+'/stats_statesm_r.csv',sep=';')
 
 
 ## Texas hourly
@@ -282,9 +331,9 @@ prod_TXh = pd.DataFrame({'wp_obs':prod_TXh_xl['Total Wind Output, MW'].values},
 prod_TXh = prod_TXh[~prod_TXh.index.duplicated()]*10**3
 # load simulated data
 wp_TXE = xr.open_dataset(results_path+"/windpower_states_ERA5.nc").sel(state='TX').drop('state').to_dataframe()
-wp_TXE_GWA = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc").sel(state='TX').drop('state').to_dataframe()
+wp_TXE_GWA = xr.open_dataset(results_pathg+"/windpower_states_ERA5_GWA.nc").sel(state='TX').drop('state').to_dataframe()
 wp_TXM = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc").sel(state='TX').drop('state').to_dataframe().resample('h').sum() # resample merra because 2019 different format
-wp_TXM_GWA = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc").sel(state='TX').drop('state').to_dataframe().resample('h').sum()
+wp_TXM_GWA = xr.open_dataset(results_pathg+"/windpower_states_MERRA2_GWA.nc").sel(state='TX').drop('state').to_dataframe().resample('h').sum()
 # merge
 comp_TXh = pd.concat([wp_TXE,wp_TXE_GWA,wp_TXM,wp_TXM_GWA],axis=1)
 comp_TXh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -308,8 +357,8 @@ stats_TXh_r = pd.DataFrame({'ERA5':stats(cf_TXh.ERA5,cf_TXh.wp_obs),
                             'obs':[np.nan,np.nan,np.nan,round(cf_TXh.wp_obs.mean(),2)]},
                            index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_TXh.to_csv(results_path+'/stats_TXh.csv')
-stats_TXh_r.to_csv(results_path+'/stats_TXh_r.csv',sep=';')
+stats_TXh.to_csv(results_pathg+'/stats_TXh.csv')
+stats_TXh_r.to_csv(results_pathg+'/stats_TXh_r.csv',sep=';')
 
 
 # Texas Daily
@@ -332,8 +381,8 @@ stats_TXd_r = pd.DataFrame({'ERA5':stats(cf_TXd.ERA5,cf_TXd.wp_obs),
                             'obs':[np.nan,np.nan,np.nan,round(cf_TXd.wp_obs.mean(),2)]},
                            index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_TXd.to_csv(results_path+'/stats_TXd.csv')
-stats_TXd_r.to_csv(results_path+'/stats_TXd_r.csv',sep=';')
+stats_TXd.to_csv(results_pathg+'/stats_TXd.csv')
+stats_TXd_r.to_csv(results_pathg+'/stats_TXd_r.csv',sep=';')
 
 
 ## BPA hourly + daily + monthly
@@ -419,9 +468,9 @@ prod_BPAh = prod_BPA5min.resample('H').sum()/12* 10**3
 # Prepare simulated data
 # load data
 wp_BPAE = xr.open_dataset(results_path+"/windpower_BPA_ERA5.nc").to_dataframe()
-wp_BPAE_GWA = xr.open_dataset(results_path+"/windpower_BPA_ERA5_GWA.nc").to_dataframe()
+wp_BPAE_GWA = xr.open_dataset(results_pathg+"/windpower_BPA_ERA5_GWA.nc").to_dataframe()
 wp_BPAM = xr.open_dataset(results_path+"/windpower_BPA_MERRA2.nc").to_dataframe().resample('h').sum() # resample merra because 2019 different format
-wp_BPAM_GWA = xr.open_dataset(results_path+"/windpower_BPA_MERRA2_GWA.nc").to_dataframe().resample('h').sum()
+wp_BPAM_GWA = xr.open_dataset(results_pathg+"/windpower_BPA_MERRA2_GWA.nc").to_dataframe().resample('h').sum()
 # merge data
 comp_BPAh = pd.concat([wp_BPAE,wp_BPAE_GWA,wp_BPAM,wp_BPAM_GWA],axis=1)
 comp_BPAh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -449,8 +498,8 @@ stats_BPAh_r = pd.DataFrame({'ERA5':stats(cf_BPAh.ERA5,cf_BPAh.wp_obs),
                             'obs':[np.nan,np.nan,np.nan,round(cf_BPAh.wp_obs.mean(),2)]},
                            index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_BPAh.to_csv(results_path+'/stats_BPAh.csv')
-stats_BPAh_r.to_csv(results_path+'/stats_BPAh_r.csv',sep=';')
+stats_BPAh.to_csv(results_pathg+'/stats_BPAh.csv')
+stats_BPAh_r.to_csv(results_pathg+'/stats_BPAh_r.csv',sep=';')
 
 ## BPA daily
 # aggregate daily
@@ -471,8 +520,8 @@ stats_BPAd_r = pd.DataFrame({'ERA5':stats(cf_BPAd.ERA5,cf_BPAd.wp_obs),
                             'obs':[np.nan,np.nan,np.nan,round(cf_BPAd.wp_obs.mean(),2)]},
                            index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_BPAd.to_csv(results_path+'/stats_BPAd.csv')
-stats_BPAd_r.to_csv(results_path+'/stats_BPAd_r.csv',sep=';')
+stats_BPAd.to_csv(results_pathg+'/stats_BPAd.csv')
+stats_BPAd_r.to_csv(results_pathg+'/stats_BPAd_r.csv',sep=';')
 
 ## BPA monthly
 # aggregate monthly
@@ -493,8 +542,8 @@ stats_BPAm_r = pd.DataFrame({'ERA5':stats(cf_BPAm.ERA5,cf_BPAm.wp_obs),
                             'obs':[np.nan,np.nan,np.nan,round(cf_BPAm.wp_obs.mean(),2)]},
                            index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_BPAm.to_csv(results_path+'/stats_BPAm.csv')
-stats_BPAm_r.to_csv(results_path+'/stats_BPAm_r.csv',sep=';')
+stats_BPAm.to_csv(results_pathg+'/stats_BPAm.csv')
+stats_BPAm_r.to_csv(results_pathg+'/stats_BPAm_r.csv',sep=';')
 
 
 ## New England monthly
@@ -522,9 +571,9 @@ prod_NE = prod_NE.tz_localize('US/Eastern')
 # Prepare simulated data
 # load data
 wp_NEE = xr.open_dataset(results_path+"/windpower_NewEngland_ERA5.nc").to_dataframe()
-wp_NEE_GWA = xr.open_dataset(results_path+"/windpower_NewEngland_ERA5_GWA.nc").to_dataframe()
+wp_NEE_GWA = xr.open_dataset(results_pathg+"/windpower_NewEngland_ERA5_GWA.nc").to_dataframe()
 wp_NEM = xr.open_dataset(results_path+"/windpower_NewEngland_MERRA2.nc").to_dataframe().resample('h').sum() # resample merra because 2019 different format
-wp_NEM_GWA = xr.open_dataset(results_path+"/windpower_NewEngland_MERRA2_GWA.nc").to_dataframe().resample('h').sum()
+wp_NEM_GWA = xr.open_dataset(results_pathg+"/windpower_NewEngland_MERRA2_GWA.nc").to_dataframe().resample('h').sum()
 # merge data
 comp_NEh = pd.concat([wp_NEE,wp_NEE_GWA,wp_NEM,wp_NEM_GWA],axis=1)
 comp_NEh.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -548,5 +597,5 @@ stats_NEm_r = pd.DataFrame({'ERA5':stats(cf_NEm.ERA5,cf_NEm.wp_obs),
                             'obs':[np.nan,np.nan,np.nan,round(cf_NEm.wp_obs.mean(),2)]},
                            index = ['cor','rmse','mbe','avg'])
 # save statistical results
-stats_NEm.to_csv(results_path+'/stats_NEm.csv')
-stats_NEm_r.to_csv(results_path+'/stats_NEm_r.csv',sep=';')
+stats_NEm.to_csv(results_pathg+'/stats_NEm.csv')
+stats_NEm_r.to_csv(results_pathg+'/stats_NEm_r.csv',sep=';')

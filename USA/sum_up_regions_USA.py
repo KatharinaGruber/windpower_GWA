@@ -25,10 +25,12 @@ else:
     GWA = args.GWA
 
 if GWA == "2":
-    results_path = results_path + '/results_GWA2'
+    results_pathg = results_path + '/results_GWA2'
+else:
+    results_pathg = results_path
 
 # sum up states
-if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:
+if len(glob.glob(results_pathg + '/windpower_states_*.nc')) < 4:
     print("summing up states...")
 
     # MERRA2
@@ -41,10 +43,10 @@ if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:
         del(wp,wp_loc,turbine_data_mer)
 
     # MERRA2 + GWA
-    ofile = results_path + "/windpower_states_MERRA2_GWA.nc"
-    if ofile not in glob.glob(results_path + '/*'):
+    ofile = results_pathg + "/windpower_states_MERRA2_GWA.nc"
+    if ofile not in glob.glob(results_pathg + '/*'):
         turbine_data_mer_gwa = pd.read_csv(usa_path+"/turbine_data_mer_gwa.csv")
-        wp_loc = xr.open_mfdataset(results_path+"/windpower_??_MERRA2_GWA.nc")
+        wp_loc = xr.open_mfdataset(results_pathg+"/windpower_??_MERRA2_GWA.nc")
         wp = wp_loc.groupby(xr.DataArray(turbine_data_mer_gwa.state,dims='location')).sum('location')
         wp.to_netcdf(ofile)
         del(wp,wp_loc,turbine_data_mer_gwa)
@@ -59,10 +61,10 @@ if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:
         del(wp,wp_loc,turbine_data_era)
 
     # ERA5 + GWA
-    ofile = results_path + "/windpower_states_ERA5_GWA.nc"
-    if ofile not in glob.glob(results_path + '/*'):
+    ofile = results_pathg + "/windpower_states_ERA5_GWA.nc"
+    if ofile not in glob.glob(results_pathg + '/*'):
         turbine_data_era_gwa = pd.read_csv(usa_path+"/turbine_data_era_gwa.csv")
-        wp_loc = xr.open_mfdataset(results_path+"/windpower_??_ERA5_GWA.nc", chunks = {'time':38})
+        wp_loc = xr.open_mfdataset(results_pathg+"/windpower_??_ERA5_GWA.nc", chunks = {'time':38})
         wp = wp_loc.groupby(xr.DataArray(turbine_data_era_gwa.state,dims='location')).sum('location')
         wp.to_netcdf(ofile)
         del(wp,wp_loc,turbine_data_era_gwa)
@@ -71,7 +73,7 @@ if len(glob.glob(results_path + '/windpower_states_*.nc')) < 4:
 # sum up BPA
 # the shares actually would depend on the turbine capacity too, but in this case,
 # turbines with the same specific power (and thus same label) also have the same capacity
-if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
+if len(glob.glob(results_pathg + "/windpower_BPA_*.nc")) < 4:
     print("summing up BPA...")
 
     # get BPA windparks
@@ -96,10 +98,10 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
         del(BPA_mer,wp_loc_mer,wp_BPA_mer)
     
     # MERRA2 + GWA
-    ofile = results_path + "/windpower_BPA_MERRA2_GWA.nc"
-    if ofile not in glob.glob(results_path + "/*"):
+    ofile = results_pathg + "/windpower_BPA_MERRA2_GWA.nc"
+    if ofile not in glob.glob(results_pathg + "/*"):
         BPA_mer_gwa = pBPA.groupby(labels.lbl_mer_gwa).mean()
-        wp_loc_mer_gwa = xr.open_mfdataset(results_path+"/windpower_??_MERRA2_GWA.nc")
+        wp_loc_mer_gwa = xr.open_mfdataset(results_pathg+"/windpower_??_MERRA2_GWA.nc")
         shares = xr.DataArray(BPA_mer_gwa.p[BPA_mer_gwa.p>0].values,dims = 'location',coords = {'location':range(sum(BPA_mer_gwa.p>0))})
         wp_BPA_mer_gwa = (wp_loc_mer_gwa.isel(location = np.where(BPA_mer_gwa.p.values > 0)[0]).assign_coords(location = range(len(shares))) * shares).sum('location')
         wp_BPA_mer_gwa.to_netcdf(ofile)
@@ -115,10 +117,10 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
         del(BPA_era,wp_loc_era,wp_BPA_era)
     
     # ERA5 + GWA
-    ofile = results_path + "/windpower_BPA_ERA5_GWA.nc"
-    if ofile not in glob.glob(results_path + "/*"):
+    ofile = results_pathg + "/windpower_BPA_ERA5_GWA.nc"
+    if ofile not in glob.glob(results_pathg + "/*"):
         BPA_era_gwa = pBPA.groupby(labels.lbl_era_gwa).mean()
-        wp_loc_era_gwa = xr.open_mfdataset(results_path+"/windpower_??_ERA5_GWA.nc")
+        wp_loc_era_gwa = xr.open_mfdataset(results_pathg+"/windpower_??_ERA5_GWA.nc")
         shares = xr.DataArray(BPA_era_gwa.p[BPA_era_gwa.p>0].values,dims = 'location',coords = {'location':range(sum(BPA_era_gwa.p>0))})
         wp_BPA_era_gwa = (wp_loc_era_gwa.isel(location = np.where(BPA_era_gwa.p.values > 0)[0]).assign_coords(location = range(len(shares))) * shares).sum('location')
         wp_BPA_era_gwa.to_netcdf(ofile)
@@ -128,7 +130,7 @@ if len(glob.glob(results_path + "/windpower_BPA_*.nc")) < 4:
 
 
 # sum up New England
-if len(glob.glob(results_path + "/windpower_NewEngland_*.nc")) < 4:
+if len(glob.glob(results_pathg + "/windpower_NewEngland_*.nc")) < 4:
     print("summing up New England...")
     NE_states = ['CT','NH','ME','MA','RI','VT']
 
@@ -138,13 +140,15 @@ if len(glob.glob(results_path + "/windpower_NewEngland_*.nc")) < 4:
         wp_state = xr.open_dataset(results_path+"/windpower_states_MERRA2.nc")
         wpNE = wp_state.sel(state=NE_states).sum('state')
         wpNE.to_netcdf(ofile)
+        del(wp_state,wpNE)
 
     # MERRA2 + GWA
-    ofile = results_path+"/windpower_NewEngland_MERRA2_GWA.nc"
-    if ofile not in glob.glob(results_path + "/*"):
-        wp_state = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc")
+    ofile = results_pathg+"/windpower_NewEngland_MERRA2_GWA.nc"
+    if ofile not in glob.glob(results_pathg + "/*"):
+        wp_state = xr.open_dataset(results_pathg+"/windpower_states_MERRA2_GWA.nc")
         wpNE = wp_state.sel(state=NE_states).sum('state')
         wpNE.to_netcdf(ofile)
+        del(wp_state,wpNE)
 
     # ERA5
     ofile = results_path+"/windpower_NewEngland_ERA5.nc"
@@ -152,18 +156,19 @@ if len(glob.glob(results_path + "/windpower_NewEngland_*.nc")) < 4:
         wp_state = xr.open_dataset(results_path+"/windpower_states_ERA5.nc")
         wpNE = wp_state.sel(state=NE_states).sum('state')
         wpNE.to_netcdf(ofile)
+        del(wp_state,wpNE)
 
     # ERA5 + GWA
-    ofile = results_path+"/windpower_NewEngland_ERA5_GWA.nc"
-    if ofile not in glob.glob(results_path + "/*"):
-        wp_state = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc")
+    ofile = results_pathg+"/windpower_NewEngland_ERA5_GWA.nc"
+    if ofile not in glob.glob(results_pathg + "/*"):
+        wp_state = xr.open_dataset(results_pathg+"/windpower_states_ERA5_GWA.nc")
         wpNE = wp_state.sel(state=NE_states).sum('state')
         wpNE.to_netcdf(ofile)
-    del(wp_state,wpNE)
+        del(wp_state,wpNE)
 
 
 # sum up USA
-if len(glob.glob(results_path + "/windpower_USA_*.nc")) < 4:
+if len(glob.glob(results_pathg + "/windpower_USA_*.nc")) < 4:
     print("summing up USA...")
 
     # MERRA2
@@ -174,9 +179,9 @@ if len(glob.glob(results_path + "/windpower_USA_*.nc")) < 4:
         wpUSA.to_netcdf(ofile)
 
     # MERRA2 + GWA
-    ofile = results_path+"/windpower_USA_MERRA2_GWA.nc"
-    if ofile not in glob.glob(results_path + "/*"):
-        wp_state = xr.open_dataset(results_path+"/windpower_states_MERRA2_GWA.nc")
+    ofile = results_pathg+"/windpower_USA_MERRA2_GWA.nc"
+    if ofile not in glob.glob(results_pathg + "/*"):
+        wp_state = xr.open_dataset(results_pathg+"/windpower_states_MERRA2_GWA.nc")
         wpUSA = wp_state.sum('state')
         wpUSA.to_netcdf(ofile)
 
@@ -188,9 +193,9 @@ if len(glob.glob(results_path + "/windpower_USA_*.nc")) < 4:
         wpUSA.to_netcdf(ofile)
 
     # ERA5 + GWA
-    ofile = results_path+"/windpower_USA_ERA5_GWA.nc"
-    if ofile not in glob.glob(results_path + "/*"):
-        wp_state = xr.open_dataset(results_path+"/windpower_states_ERA5_GWA.nc")
+    ofile = results_pathg+"/windpower_USA_ERA5_GWA.nc"
+    if ofile not in glob.glob(results_pathg + "/*"):
+        wp_state = xr.open_dataset(results_pathg+"/windpower_states_ERA5_GWA.nc")
         wpUSA = wp_state.sum('state')
         wpUSA.to_netcdf(ofile)
 
