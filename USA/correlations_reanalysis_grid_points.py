@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import argparse
 import numpy as np
 import os
 import pandas as pd
@@ -13,23 +12,11 @@ from paths_usa import *
 from dask.diagnostics import ProgressBar
 ProgressBar().register()
 
-parser = argparse.ArgumentParser(description='Insert optionally GWA')
-parser.add_argument('-GWA')
-args = parser.parse_args()
-if(args.GWA == None):
-    GWA = 3
-else:
-    GWA = args.GWA
-if GWA == "2":
-    results_path = results_path + '/results_GWA2'
-
 
 # MERRA-2 and ERA5 only unique interpolated locations
 print('prepare turbine location data')
 # open turbine files
-wt_mer_gwa = pd.read_csv(usa_path + '/turbine_data_mer_gwa.csv', index_col=0)
 wt_mer = pd.read_csv(usa_path + '/turbine_data_mer.csv', index_col=0)
-wt_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', index_col=0)
 wt_era = pd.read_csv(usa_path + '/turbine_data_era.csv', index_col=0)
 
 # open wind files
@@ -49,12 +36,8 @@ in_seq_era = xr.Dataset({'x':(['lat','lon'],
                                    'lon':wind_era.longitude.values})
 
 # interpolate to reanalysis grid points
-ip_mer_gwa = in_seq_mer.interp(coords={"lon":xr.DataArray(wt_mer_gwa.lon,dims='location'),
-                                       "lat":xr.DataArray(wt_mer_gwa.lat,dims='location')},method="nearest").to_dataframe()
 ip_mer = in_seq_mer.interp(coords={"lon":xr.DataArray(wt_mer.lon,dims='location'),
                                    "lat":xr.DataArray(wt_mer.lat,dims='location')},method="nearest").to_dataframe()
-ip_era_gwa = in_seq_era.interp(coords={"lon":xr.DataArray(wt_era_gwa.lon,dims='location'),
-                                       "lat":xr.DataArray(wt_era_gwa.lat,dims='location')},method="nearest").to_dataframe()
 ip_era = in_seq_era.interp(coords={"lon":xr.DataArray(wt_era.lon,dims='location'),
                                    "lat":xr.DataArray(wt_era.lat,dims='location')},method="nearest").to_dataframe()
 
@@ -68,9 +51,7 @@ uniques_mer['cor_id'] = range(len(uniques_mer.index))
 
 # add correlation ids to wind turbine data
 wt_mer['cor_id'] = ip_mer.x.map(uniques_mer.cor_id)
-wt_mer_gwa['cor_id'] = ip_mer_gwa.x.map(uniques_mer.cor_id)
 wt_era['cor_id'] = ip_era.x.map(uniques_era.cor_id)
-wt_era_gwa['cor_id'] = ip_era_gwa.x.map(uniques_era.cor_id)
 
 # interpolate wind to unique locations and extrapolate to 80 m hubheight, which is mean hubheight in US
 windi_mer = wind_mer.interp(coords={"lon":xr.DataArray(uniques_mer.lon,dims='location'),
@@ -126,29 +107,19 @@ pBPA[windturbines[windturbines.t_state!='GU'].xlong.values>-115] = False
 
 # get shares of where BPA wind parks are installed
 BPA_mer = pBPA.groupby(labels.lbl_mer).mean()
-BPA_mer_gwa = pBPA.groupby(labels.lbl_mer_gwa).mean()
 BPA_era = pBPA.groupby(labels.lbl_era).mean()
-BPA_era_gwa = pBPA.groupby(labels.lbl_era_gwa).mean()
 # get correlation IDs
 BPA_mer['cor_id'] = wt_mer.cor_id.values
-BPA_mer_gwa['cor_id'] = wt_mer_gwa.cor_id.values
 BPA_era['cor_id'] = wt_era.cor_id.values
-BPA_era_gwa['cor_id'] = wt_era_gwa.cor_id.values
 # select only windparks in BPA
 BPA_mer = BPA_mer[BPA_mer.p>0]
-BPA_mer_gwa = BPA_mer_gwa[BPA_mer_gwa.p>0]
 BPA_era = BPA_era[BPA_era.p>0]
-BPA_era_gwa = BPA_era_gwa[BPA_era_gwa.p>0]
 
 # unique mean correlations BPA
 mc_BPA_mer = np.array([list(c_mer[BPA_mer.cor_id.unique()[i],
                                  np.delete(BPA_mer.cor_id.unique(),i,0)]) for i in range(len(BPA_mer.cor_id.unique()))]).mean()
-mc_BPA_mer_gwa = np.array([list(c_mer[BPA_mer_gwa.cor_id.unique()[i],
-                                     np.delete(BPA_mer_gwa.cor_id.unique(),i,0)]) for i in range(len(BPA_mer_gwa.cor_id.unique()))]).mean()
 mc_BPA_era = np.array([list(c_era[BPA_era.cor_id.unique()[i],
                                  np.delete(BPA_era.cor_id.unique(),i,0)]) for i in range(len(BPA_era.cor_id.unique()))]).mean()
-mc_BPA_era_gwa = np.array([list(c_era[BPA_era_gwa.cor_id.unique()[i],
-                                         np.delete(BPA_era_gwa.cor_id.unique(),i,0)]) for i in range(len(BPA_era_gwa.cor_id.unique()))]).mean()
 
 # USA
 print('correlations USA')
@@ -156,12 +127,8 @@ print('correlations USA')
 # unique mean correlations USA
 mc_USA_mer = np.array([list(c_mer[wt_mer.cor_id.unique()[i],
                                 np.delete(wt_mer.cor_id.unique(),i,0)]) for i in range(len(wt_mer.cor_id.unique()))]).mean()
-mc_USA_mer_gwa = np.array([list(c_mer[wt_mer_gwa.cor_id.unique()[i],
-                                    np.delete(wt_mer_gwa.cor_id.unique(),i,0)]) for i in range(len(wt_mer_gwa.cor_id.unique()))]).mean()
 mc_USA_era = np.array([list(c_era[wt_era.cor_id.unique()[i],
                                 np.delete(wt_era.cor_id.unique(),i,0)]) for i in range(len(wt_era.cor_id.unique()))]).mean()
-mc_USA_era_gwa = np.array([list(c_era[wt_era_gwa.cor_id.unique()[i],
-                                    np.delete(wt_era_gwa.cor_id.unique(),i,0)]) for i in range(len(wt_era_gwa.cor_id.unique()))]).mean()
 
 
 # New England
@@ -169,18 +136,12 @@ print('correlations New England')
 
 NE_states = ['CT','NH','ME','MA','RI','VT']
 wt_mer_NE = wt_mer[[state in NE_states for state in wt_mer.state]]
-wt_mer_gwa_NE = wt_mer_gwa[[state in NE_states for state in wt_mer_gwa.state]]
 wt_era_NE = wt_era[[state in NE_states for state in wt_era.state]]
-wt_era_gwa_NE = wt_era_gwa[[state in NE_states for state in wt_era_gwa.state]]
 # unique mean correlations New England
 mc_NE_mer = np.array([list(c_mer[wt_mer_NE.cor_id.unique()[i],
                                 np.delete(wt_mer_NE.cor_id.unique(),i,0)]) for i in range(len(wt_mer_NE.cor_id.unique()))]).mean()
-mc_NE_mer_gwa = np.array([list(c_mer[wt_mer_gwa_NE.cor_id.unique()[i],
-                                    np.delete(wt_mer_gwa_NE.cor_id.unique(),i,0)]) for i in range(len(wt_mer_gwa_NE.cor_id.unique()))]).mean()
 mc_NE_era = np.array([list(c_era[wt_era_NE.cor_id.unique()[i],
                                 np.delete(wt_era_NE.cor_id.unique(),i,0)]) for i in range(len(wt_era_NE.cor_id.unique()))]).mean()
-mc_NE_era_gwa = np.array([list(c_era[wt_era_gwa_NE.cor_id.unique()[i],
-                                    np.delete(wt_era_gwa_NE.cor_id.unique(),i,0)]) for i in range(len(wt_era_gwa_NE.cor_id.unique()))]).mean()
           
                           
 # regions
@@ -202,55 +163,35 @@ NewEng = ['CT','NH','ME','MA','RI','VT']
 states_reg = [NewEng,MidAtl,ENC,WNC,SouAtl,ESC,WSC,Mou,PacCon,PacNon]
 
 mc_reg_mer = []
-mc_reg_mer_gwa = []
 mc_reg_era = []
-mc_reg_era_gwa = []
 for ind in range(len(states_reg)):
     wt_mer_reg = wt_mer[[state in states_reg[ind] for state in wt_mer.state]]
-    wt_mer_gwa_reg = wt_mer_gwa[[state in states_reg[ind] for state in wt_mer_gwa.state]]
     wt_era_reg = wt_era[[state in states_reg[ind] for state in wt_era.state]]
-    wt_era_gwa_reg = wt_era_gwa[[state in states_reg[ind] for state in wt_era_gwa.state]]
     # unique values
     if len(wt_mer_reg.cor_id.unique())==1:
         mc_r_mer = 1
     else:
         mc_r_mer = np.array([list(c_mer[wt_mer_reg.cor_id.unique()[i],
                                         np.delete(wt_mer_reg.cor_id.unique(),i,0)]) for i in range(len(wt_mer_reg.cor_id.unique()))]).mean()
-    if len(wt_mer_gwa_reg.cor_id.unique())==1:
-        mc_r_mer_gwa = 1
-    else:
-        mc_r_mer_gwa = np.array([list(c_mer[wt_mer_gwa_reg.cor_id.unique()[i],
-                                            np.delete(wt_mer_gwa_reg.cor_id.unique(),i,0)]) for i in range(len(wt_mer_gwa_reg.cor_id.unique()))]).mean()
     if  len(wt_era_reg.cor_id.unique())==1:
         mc_r_era = 1
     else:
         mc_r_era = np.array([list(c_era[wt_era_reg.cor_id.unique()[i],
                                         np.delete(wt_era_reg.cor_id.unique(),i,0)]) for i in range(len(wt_era_reg.cor_id.unique()))]).mean()
-    if len(wt_era_gwa_reg.cor_id.unique())==1:
-        mc_r_era_gwa = 1
-    else:
-        mc_r_era_gwa = np.array([list(c_era[wt_era_gwa_reg.cor_id.unique()[i],
-                                            np.delete(wt_era_gwa_reg.cor_id.unique(),i,0)]) for i in range(len(wt_era_gwa_reg.cor_id.unique()))]).mean()
     mc_reg_mer = mc_reg_mer + [mc_r_mer]
-    mc_reg_mer_gwa = mc_reg_mer_gwa + [mc_r_mer_gwa]
     mc_reg_era = mc_reg_era + [mc_r_era]
-    mc_reg_era_gwa = mc_reg_era_gwa + [mc_r_era_gwa]
 
 
 # states
 print('correlations states')
 
 mc_st_mer = []
-mc_st_mer_gwa = []
 mc_st_era = []
-mc_st_era_gwa = []
 
 states = wt_mer.state.unique()
 for state in states:
     wt_mer_s = wt_mer[wt_mer.state==state]
-    wt_mer_gwa_s = wt_mer_gwa[wt_mer_gwa.state==state]
     wt_era_s = wt_era[wt_era.state==state]
-    wt_era_gwa_s = wt_era_gwa[wt_era_gwa.state==state]
 
     # unique values
     if len(wt_mer_s.cor_id.unique())==1:
@@ -258,25 +199,13 @@ for state in states:
     else:
         mc_s_mer = np.array([list(c_mer[wt_mer_s.cor_id.unique()[i],
                                         np.delete(wt_mer_s.cor_id.unique(),i,0)]) for i in range(len(wt_mer_s.cor_id.unique()))]).mean()
-    if len(wt_mer_gwa_s.cor_id.unique())==1:
-        mc_s_mer_gwa = 1
-    else:
-        mc_s_mer_gwa = np.array([list(c_mer[wt_mer_gwa_s.cor_id.unique()[i],
-                                            np.delete(wt_mer_gwa_s.cor_id.unique(),i,0)]) for i in range(len(wt_mer_gwa_s.cor_id.unique()))]).mean()
     if len(wt_era_s.cor_id.unique())==1:
         mc_s_era = 1
     else:
         mc_s_era = np.array([list(c_era[wt_era_s.cor_id.unique()[i],
                                         np.delete(wt_era_s.cor_id.unique(),i,0)]) for i in range(len(wt_era_s.cor_id.unique()))]).mean()
-    if len(wt_era_gwa_s.cor_id.unique())==1:
-        mc_s_era_gwa = 1
-    else:
-        mc_s_era_gwa = np.array([list(c_era[wt_era_gwa_s.cor_id.unique()[i],
-                                            np.delete(wt_era_gwa_s.cor_id.unique(),i,0)]) for i in range(len(wt_era_gwa_s.cor_id.unique()))]).mean()
     mc_st_mer = mc_st_mer + [mc_s_mer]
-    mc_st_mer_gwa = mc_st_mer_gwa + [mc_s_mer_gwa]
     mc_st_era = mc_st_era + [mc_s_era]
-    mc_st_era_gwa = mc_st_era_gwa + [mc_s_era_gwa]
 
 
 # merge correlations
