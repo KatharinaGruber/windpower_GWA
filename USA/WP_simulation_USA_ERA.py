@@ -28,15 +28,6 @@ ProgressBar().register()
 from paths_usa import *
 
 
-# prepare turbine data
-if len(glob.glob(usa_path+'/turbine_data_*.csv'))!=4:
-	exec(open('prepare_USA_turbines.py').read())
-	
-# prepare reanalysis data: calcualte effective wind speeds and alpha
-if len(glob.glob(era_path + '/eff_ws/*')) != 18:
-	exec(open('prepare_USA_ERA5.py').read())
-
-
 # Simulate wind power with ERA5
 wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 38})
 alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'time': 38})

@@ -35,20 +35,12 @@ parser.add_argument('-GWA')
 args = parser.parse_args()
 state = args.state
 if(args.GWA == None):
-    GWA = 3
+    GWA = "3"
 else:
     GWA = args.GWA
 
 if GWA == "2":
     results_path = results_path + '/results_GWA2'
-
-# prepare turbine data
-if len(glob.glob(usa_path+'/turbine_data_*.csv'))!=4:
-    exec(open('prepare_USA_turbines.py').read())
-    
-# prepare reanalysis data: calcualte effective wind speeds and alpha
-if len(glob.glob(era_path + '/eff_ws/*')) != 18:
-    exec(open('prepare_USA_ERA5.py').read())
 
 
 # Simulate wind power with ERA5
@@ -57,10 +49,10 @@ alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'t
 
 # with GWA
 outfile = results_path + '/windpower_??_ERA5_GWA.nc'
-turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
+turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa' + GWA + '.csv', parse_dates=['commissioning'])
 if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfile):
     print('calculating ERA5 ' + state + ' GWA')
-    if GWA == 3:
+    if GWA == "3":
         if state == 'PR':
             GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_PR100m.tif')
         else:

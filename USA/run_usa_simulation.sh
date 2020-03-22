@@ -21,6 +21,10 @@ then
 else
     GWA="3"
 fi
+
+# prepare turbine data
+python prepare_USA_turbines.py -GWA $GWA
+
 DATASETS='MERRA ERA'
 for DS in $DATASETS
 do

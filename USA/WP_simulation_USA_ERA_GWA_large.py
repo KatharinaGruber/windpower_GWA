@@ -36,7 +36,7 @@ parser.add_argument('-GWA')
 args = parser.parse_args()
 state = args.state
 if(args.GWA == None):
-    GWA = 3
+    GWA = "3"
 else:
     GWA = args.GWA
 
@@ -50,8 +50,8 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
     wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 38})
     alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_USA_*.nc", chunks = {'time': 38})
     # with GWA
-    turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa.csv', parse_dates=['commissioning'])
-    if GWA == 3:
+    turbine_data_era_gwa = pd.read_csv(usa_path + '/turbine_data_era_gwa' + GWA + '.csv', parse_dates=['commissioning'])
+    if GWA == "3":
         if state == 'PR':
             GWA = xr.open_rasterio(usa_path+'/GWA/GWA3_PR100m.tif')
         else:
