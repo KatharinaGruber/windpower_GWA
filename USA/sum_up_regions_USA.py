@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description='Insert optionally GWA')
 parser.add_argument('-GWA')
 args = parser.parse_args()
 if(args.GWA == None):
-    GWA = 3
+    GWA = "3"
 else:
     GWA = args.GWA
 
@@ -45,7 +45,7 @@ if len(glob.glob(results_pathg + '/windpower_states_*.nc')) < 4:
     # MERRA2 + GWA
     ofile = results_pathg + "/windpower_states_MERRA2_GWA.nc"
     if ofile not in glob.glob(results_pathg + '/*'):
-        turbine_data_mer_gwa = pd.read_csv(usa_path+"/turbine_data_mer_gwa.csv")
+        turbine_data_mer_gwa = pd.read_csv(usa_path+"/turbine_data_mer_gwa" + GWA + ".csv")
         wp_loc = xr.open_mfdataset(results_pathg+"/windpower_??_MERRA2_GWA.nc")
         wp = wp_loc.groupby(xr.DataArray(turbine_data_mer_gwa.state,dims='location')).sum('location')
         wp.to_netcdf(ofile)
@@ -63,7 +63,7 @@ if len(glob.glob(results_pathg + '/windpower_states_*.nc')) < 4:
     # ERA5 + GWA
     ofile = results_pathg + "/windpower_states_ERA5_GWA.nc"
     if ofile not in glob.glob(results_pathg + '/*'):
-        turbine_data_era_gwa = pd.read_csv(usa_path+"/turbine_data_era_gwa.csv")
+        turbine_data_era_gwa = pd.read_csv(usa_path+"/turbine_data_era_gwa" + GWA + ".csv")
         wp_loc = xr.open_mfdataset(results_pathg+"/windpower_??_ERA5_GWA.nc", chunks = {'time':38})
         wp = wp_loc.groupby(xr.DataArray(turbine_data_era_gwa.state,dims='location')).sum('location')
         wp.to_netcdf(ofile)
