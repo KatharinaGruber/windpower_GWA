@@ -97,7 +97,7 @@ BPA_parks = pd.read_csv(usa_path + "/BPA_windparks.csv")
 # get windturbine locations/names
 windturbines = pd.read_csv(usa_path + "/uswtdb_v2_3_20200109.csv",delimiter=',')
 # get labels
-labels = pd.read_csv(usa_path + '/labels_turbine_data.csv')
+labels = pd.read_csv(usa_path + '/labels_turbine_data_gwa3.csv')
 # get indices of BPA wind parks from wind turbine dataset
 pBPA = pd.DataFrame({'p': [park in BPA_parks.name.values for park in windturbines[windturbines.t_state!='GU'].p_name.values]})
 
