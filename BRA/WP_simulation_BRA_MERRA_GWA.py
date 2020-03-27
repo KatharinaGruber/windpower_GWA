@@ -35,7 +35,7 @@ else:
 
 if GWA == "2":
     results_path = results_path + '/results_GWA2'
-    if not os.path.exists(results_path)
+    if not os.path.exists(results_path):
         os.mkdir(results_path)
 
 # Simulate wind power with MERRA-2
@@ -49,9 +49,9 @@ turbine_data = pd.read_csv(bra_path + '/turbine_data_mer_gwa' + GWA + '.csv', pa
 if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outfile):
     print('calculating MERRA2 ' + state + ' GWA')
     if GWA == "3":
-	GWA = xr.open_rasterio(bra_path+'/GWA/GWA3_BRA50m.tif')
+        GWA = xr.open_rasterio(bra_path+'/GWA/GWA3_BRA50m.tif')
     else:
-        GWA = xr.open_rasterio(bra_path+'/GWA/GWA_BRA50m.tif')
+        GWA = xr.open_dataarray(bra_path+'/GWA/GWA2_BRA50m.nc')
     ind = turbine_data.state == state
     wps = windpower_simulation_merra2(wind.wh50,
                                       alpha.alpha,

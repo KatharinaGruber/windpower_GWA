@@ -42,4 +42,4 @@ python WP_simulation_USA_Analysis.py -GWA $GWA
 
 python WP_simulation_USA_Analysis2010.py -GWA $GWA
 
-python correlations_reanalysis_gridpoints.py
+python correlations_reanalysis_grid_points.py

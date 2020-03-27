@@ -35,7 +35,7 @@ else:
 
 if GWA == "2":
     results_path = results_path + '/results_GWA2'
-    if not os.path.exists(results_path)
+    if not os.path.exists(results_path):
         os.mkdir(results_path)
 
 
@@ -52,7 +52,7 @@ if results_path + '/windpower_' + state + '_ERA5_GWA.nc' not in glob.glob(outfil
     if GWA == "3":
         GWA = xr.open_rasterio(bra_path+'/GWA/GWA3_BRA100m.tif')
     else:
-        GWA = xr.open_rasterio(bra_path+'/GWA/GWA_BRA100m.tif')
+        GWA = xr.open_dataarray(bra_path+'/GWA/GWA2_BRA100m.nc')
     ind = turbine_data.state == state
     wps = windpower_simulation_era5(wind.wh100,
                                     alpha.alpha,
