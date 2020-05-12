@@ -66,12 +66,12 @@ states = ['USA','NewEng','CT','ME','MA','NH','RI','VT','MidAtl','NJ','NY','PA','
 'MO','NE','ND','SD','SouAtl','DE','DC','FL','GA','MD','NC','SC','VA','WV','ESC','AL','KY','MS','TN','WSC','AR','LA','OK',
 'TX','Mou','AZ','CO','ID','MT','NV','NM','UT','WY','PacCon','CA','OR','WA','PacNon','AK','HI']
 
-MidAtl = ['NY','NJ','PA','DE','MD','WA','VA','WV']
+MidAtl = ['NY','NJ','PA']
 SouAtl = ['DE','MD','VA','WV','NC','SC','GA','FL','DC']
 PacCon = ['CA','OR','WA']
 PacNon = ['AK','HI']
 ENC = ['IL','IN','MI','OH','WI']
-WNC = ['IA','MN','MS','NE','ND','SD']
+WNC = ['IA','KS','MN','MS','NE','ND','SD']
 ESC = ['AL','KY','MS','TN']
 WSC = ['AR','LA','OK','TX']
 Mou = ['CO','WY','UT','NM','NV','ID','AZ','MT']
@@ -177,6 +177,9 @@ prod_USAm.index = pd.to_datetime(['{}-{}-01'.format(y, m) for y, m in zip(dates[
 prod_USAm = prod_USAm[prod_USAm.index < np.datetime64("2020-01-01")].tz_localize('US/Central')
 # adapt column names
 prod_USAm.columns = states
+# remove trailing 0s
+prod_USAm[prod_USAm.fillna(0).cumsum(axis=0)==0] = np.nan
+
 # Prepare simulated data
 # load data
 wpE = xr.open_dataset(results_path+"/windpower_USA_ERA5.nc").to_dataframe()
@@ -225,13 +228,14 @@ stats_regionsm = pd.DataFrame()
 stats_regionsm_r = pd.DataFrame()
 # define order of regions, states in regions and capacities
 regions = prod_USAm.columns[[len(r)>2 for r in prod_USAm.columns]][1:]
-states_reg = [NewEng,MidAtl,ENC,WNC,SouAtl,ESC,WSC,Mou,PacCon,PacNon]
-caps_reg = [cap_NewEngm,cap_MidAtlm,cap_ENCm,cap_WNCm,cap_SouAtlm,cap_ESCm,cap_WSCm,cap_Moum,cap_PacConm,cap_PacNonm]
-for (state_reg,region,cap_regm) in zip(*(states_reg,regions,caps_reg)):
-    wpE_reg = wpE.loc[state_reg].wp.unstack().transpose().sum(axis=1)
-    wpE_GWA_reg = wpE_GWA.loc[state_reg].wp.unstack().transpose().sum(axis=1)
-    wpM_reg = wpM.loc[state_reg].wp.unstack().transpose().sum(axis=1)
-    wpM_GWA_reg = wpM_GWA.loc[state_reg].wp.unstack().transpose().sum(axis=1)
+states_reg = pd.Series([NewEng,MidAtl,ENC,WNC,SouAtl,ESC,WSC,Mou,PacCon,PacNon],index=regions)
+caps_reg = pd.Series([cap_NewEngm,cap_MidAtlm,cap_ENCm,cap_WNCm,cap_SouAtlm,cap_ESCm,cap_WSCm,cap_Moum,cap_PacConm,cap_PacNonm],index=regions)
+
+def analyse_regionsm(region,rd=False):
+    wpE_reg = wpE.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
+    wpE_GWA_reg = wpE_GWA.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
+    wpM_reg = wpM.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
+    wpM_GWA_reg = wpM_GWA.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
     prod_regm = prod_USAm[region]
     # merge data
     wp_reg = pd.concat([wpE_reg,wpE_GWA_reg,wpM_reg,wpM_GWA_reg],axis=1).tz_localize('UTC').tz_convert('US/Central')
@@ -239,27 +243,22 @@ for (state_reg,region,cap_regm) in zip(*(states_reg,regions,caps_reg)):
     # aggregate monthly
     wp_regm = wp_reg.resample('M').sum()
     # combine data and calculate capacity factors
-    cf_regm = pd.concat([wp_regm.div(cap_regm,axis=0),
-                          (prod_regm.resample('M').sum()*10**6/cap_regm)],axis=1).dropna()
+    cf_regm = pd.concat([wp_regm.div(caps_reg[region],axis=0),
+                          (prod_regm.resample('M').sum()*10**6/caps_reg[region])],axis=1).dropna()
     cf_regm.columns = np.append(wp_regm.columns,'wp_obs')
     # Analyse
-    stats_regm = pd.DataFrame({'ERA5':stats(cf_regm.ERA5['2010':],cf_regm.wp_obs['2010':],False),
-                               'ERA5_GWA':stats(cf_regm.ERA5_GWA['2010':],cf_regm.wp_obs['2010':],False),
-                               'MERRA2':stats(cf_regm.MERRA2['2010':],cf_regm.wp_obs['2010':],False),
-                               'MERRA2_GWA':stats(cf_regm.MERRA2_GWA['2010':],cf_regm.wp_obs['2010':],False),
+    stats_regm = pd.DataFrame({'ERA5':stats(cf_regm.ERA5['2010':],cf_regm.wp_obs['2010':],rd),
+                               'ERA5_GWA':stats(cf_regm.ERA5_GWA['2010':],cf_regm.wp_obs['2010':],rd),
+                               'MERRA2':stats(cf_regm.MERRA2['2010':],cf_regm.wp_obs['2010':],rd),
+                               'MERRA2_GWA':stats(cf_regm.MERRA2_GWA['2010':],cf_regm.wp_obs['2010':],rd),
                                'obs':[np.nan,np.nan,np.nan,cf_regm.wp_obs['2010':].mean()]},
                               index = ['cor','rmse','mbe','avg'])
-    stats_regm_r = pd.DataFrame({'ERA5':stats(cf_regm.ERA5['2010':],cf_regm.wp_obs['2010':]),
-                               'ERA5_GWA':stats(cf_regm.ERA5_GWA['2010':],cf_regm.wp_obs['2010':]),
-                               'MERRA2':stats(cf_regm.MERRA2['2010':],cf_regm.wp_obs['2010':]),
-                               'MERRA2_GWA':stats(cf_regm.MERRA2_GWA['2010':],cf_regm.wp_obs['2010':]),
-                               'obs':[np.nan,np.nan,np.nan,round(cf_regm.wp_obs['2010':].mean(),2)]},
-                              index = ['cor','rmse','mbe','avg'])
     stats_regm.index = pd.MultiIndex.from_product([[region],stats_regm.index.values], names=['state', 'param'])
-    stats_regm_r.index = pd.MultiIndex.from_product([[region],stats_regm_r.index.values], names=['state', 'param'])
-    # concatenate results
-    stats_regionsm = pd.concat([stats_regionsm,stats_regm])
-    stats_regionsm_r = pd.concat([stats_regionsm_r,stats_regm_r])
+    return stats_regm
+
+stats_regionsm = pd.concat(pd.Series(regions).apply(analyse_regionsm).to_list(),axis=0)
+stats_regionsm_r = pd.concat(pd.Series(regions).apply(analyse_regionsm,rd=True).to_list(),axis=0)
+
 # save statistical results
 stats_regionsm.to_csv(results_pathg+'/stats_regionsm2010.csv')
 stats_regionsm_r.to_csv(results_pathg+'/stats_regionsm_r2010.csv',sep=';')
@@ -273,7 +272,8 @@ stats_statesm_r = pd.DataFrame()
 # drop states that have no data
 prod_USAm = prod_USAm[prod_USAm.columns[(~prod_USAm.isna()).sum()!=0]]
 states_USAm = prod_USAm.columns[[len(s)==2 for s in prod_USAm.columns]]
-for state in np.array(states_USAm)[[s in turb_mer.state.unique() for s in states_USAm]]:
+
+def analyse_statesm(state,rd = False):
     # merge data
     wp_st = pd.concat([wpE.wp.loc[state],
                        wpE_GWA.wp.loc[state],
@@ -287,23 +287,19 @@ for state in np.array(states_USAm)[[s in turb_mer.state.unique() for s in states
                           (prod_USAm.resample('M').sum()[state]*10**6/(cap_statesm[state]))],axis=1).replace(np.inf, np.nan).dropna()[1:]
     cf_stm.columns = np.append(wp_stm.columns,'wp_obs')
     # Analyse
-    stats_stm = pd.DataFrame({'ERA5':stats(cf_stm.ERA5['2010':],cf_stm.wp_obs['2010':],False),
-                              'ERA5_GWA':stats(cf_stm.ERA5_GWA['2010':],cf_stm.wp_obs['2010':],False),
-                              'MERRA2':stats(cf_stm.MERRA2['2010':],cf_stm.wp_obs['2010':],False),
-                              'MERRA2_GWA':stats(cf_stm.MERRA2_GWA['2010':],cf_stm.wp_obs['2010':],False),
+    stats_stm = pd.DataFrame({'ERA5':stats(cf_stm.ERA5['2010':],cf_stm.wp_obs['2010':],rd),
+                              'ERA5_GWA':stats(cf_stm.ERA5_GWA['2010':],cf_stm.wp_obs['2010':],rd),
+                              'MERRA2':stats(cf_stm.MERRA2['2010':],cf_stm.wp_obs['2010':],rd),
+                              'MERRA2_GWA':stats(cf_stm.MERRA2_GWA['2010':],cf_stm.wp_obs['2010':],rd),
                               'obs':[np.nan,np.nan,np.nan,cf_stm.wp_obs['2010':].mean()]},
                              index = ['cor','rmse','mbe','avg'])
-    stats_stm_r = pd.DataFrame({'ERA5':stats(cf_stm.ERA5['2010':],cf_stm.wp_obs['2010':]),
-                                'ERA5_GWA':stats(cf_stm.ERA5_GWA['2010':],cf_stm.wp_obs['2010':]),
-                                'MERRA2':stats(cf_stm.MERRA2['2010':],cf_stm.wp_obs['2010':]),
-                                'MERRA2_GWA':stats(cf_stm.MERRA2_GWA['2010':],cf_stm.wp_obs['2010':]),
-                                'obs':[np.nan,np.nan,np.nan,cf_stm.wp_obs['2010':].mean()]},
-                              index = ['cor','rmse','mbe','avg'])
     stats_stm.index = pd.MultiIndex.from_product([[state],stats_stm.index.values], names=['state', 'param'])
-    stats_stm_r.index = pd.MultiIndex.from_product([[state],stats_stm_r.index.values], names=['state', 'param'])
-    # concatenate results
-    stats_statesm = pd.concat([stats_statesm,stats_stm])
-    stats_statesm_r = pd.concat([stats_statesm_r,stats_stm_r])
+    return(stats_stm)
+
+st = pd.Series(states_USAm)[[s in turb_mer.state.unique() for s in states_USAm]]
+stats_statesm = pd.concat(st.apply(analyse_statesm).tolist(),axis=0)
+stats_statesm_r = pd.concat(st.apply(analyse_statesm,rd=True).tolist(),axis=0)
+
 # save statistical results
 stats_statesm.to_csv(results_pathg+'/stats_statesm2010.csv')
 stats_statesm_r.to_csv(results_pathg+'/stats_statesm_r2010.csv',sep=';')
@@ -594,3 +590,45 @@ stats_NEm_r = pd.DataFrame({'ERA5':stats(cf_NEm.ERA5['2010':],cf_NEm.wp_obs['201
 # save statistical results
 stats_NEm.to_csv(results_pathg+'/stats_NEm2010.csv')
 stats_NEm_r.to_csv(results_pathg+'/stats_NEm_r2010.csv',sep=';')
+
+
+# merge results and save
+
+# function for preparing results
+def prep_USAres(rdf,scale,temp):
+    r = rdf.reset_index().melt(id_vars=['state','param']).dropna()
+    r.columns = ['region','param','dataset','value']
+    r['temp'] = temp
+    r['scale'] = scale
+    return(r)
+
+# USA
+stats_USAm.index = pd.MultiIndex.from_product([['USA'],stats_USAm.index.values], names = ['state','param'])
+sUSAm = prep_USAres(stats_USAm,'country','m')
+# regions
+sREGm = prep_USAres(stats_regionsm,'subsystem','m')
+# states
+sSTAm = prep_USAres(stats_statesm,'state','m')
+# Texas
+stats_TXh.index = pd.MultiIndex.from_product([['TX'],stats_TXh.index.values], names = ['state','param'])
+sTXh = prep_USAres(stats_TXh,'state','h')
+stats_TXd.index = pd.MultiIndex.from_product([['TX'],stats_TXd.index.values], names = ['state','param'])
+sTXd = prep_USAres(stats_TXd,'state','d')
+# BPA
+stats_BPAh.index = pd.MultiIndex.from_product([['BPA'],stats_BPAh.index.values], names = ['state','param'])
+sBPAh = prep_USAres(stats_BPAh,'subsystem','h')
+stats_BPAd.index = pd.MultiIndex.from_product([['BPA'],stats_BPAd.index.values], names = ['state','param'])
+sBPAd = prep_USAres(stats_BPAd,'subsystem','d')
+stats_BPAm.index = pd.MultiIndex.from_product([['BPA'],stats_BPAm.index.values], names = ['state','param'])
+sBPAm = prep_USAres(stats_BPAm,'subsystem','m')
+# New England
+stats_NEm.index = pd.MultiIndex.from_product([['NE'],stats_NEm.index.values], names = ['state','param'])
+sNEm = prep_USAres(stats_NEm,'subsystem','m')
+
+stats = pd.concat([sUSAm, sREGm, sSTAm,
+                   sTXh, sTXd,
+                   sBPAh, sBPAd, sBPAd,
+                   sNEm], axis=0)
+stats['GWA'] = 'GWA' + str(GWA)
+
+stats.to_csv(results_pathg + '/stats_GWA'+str(GWA)+'.csv')
