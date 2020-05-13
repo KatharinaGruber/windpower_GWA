@@ -108,12 +108,12 @@ print ('regions')
 
 regions = ['MidAtl','SouAtl','PacCon','PacNon','ENC','WNC','ESC','WSC','Mou','NewEng']
 
-MidAtl = ['NY','NJ','PA','DE','MD','WA','VA','WV']
+MidAtl = ['NY','NJ','PA']
 SouAtl = ['DE','MD','VA','WV','NC','SC','GA','FL','DC']
 PacCon = ['CA','OR','WA']
 PacNon = ['AK','HI']
 ENC = ['IL','IN','MI','OH','WI']
-WNC = ['IA','MN','MS','NE','ND','SD']
+WNC = ['IA','KS','MN','MS','NE','ND','SD']
 ESC = ['AL','KY','MS','TN']
 WSC = ['AR','LA','OK','TX']
 Mou = ['CO','WY','UT','NM','NV','ID','AZ','MT']
