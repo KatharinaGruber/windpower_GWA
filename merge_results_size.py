@@ -21,6 +21,7 @@ results_USA_GWA2 = pd.read_csv(rp_usa2 + '/stats_GWA2.csv',index_col=0)
 results_USA_GWA3 = pd.read_csv(rp_usa + '/stats_GWA3.csv',index_col=0)
 results_USA_tidy = pd.concat([results_USA_GWA2,results_USA_GWA3],axis=0).rename({'location':'region'},axis=1)
 results_USA_tidy['country'] = 'USA'
+results_USA_tidy.scale = results_USA_tidy.scale.replace({'subsystem':'state'})
 # filter regions with bad observed time series (filtered by visual inspection)
 bad_states = ['CT','MA','IL','RI','VT','OH','NJ','DE','NC']
 bad_states = ['CT','MA','IL','RI','VT','OH','NJ','DE','NC','NE','MI','WI','TN','ND','SD','AK']
@@ -42,27 +43,33 @@ results_BRA_tidy['country'] = 'BRA'
 
 
 ## prepare results and size parameter for analysis
-# calculate "system size" as number between 0 and 1 by divinding by largest number of grid cells per dataset (country)
-ss_usa = nums_usa.copy()
-ss_bra = nums_bra.copy()
-ss_usa.loc[ss_usa.dataset=='MERRA2','cor'] = nums_usa.cor[nums_usa.dataset=='MERRA2']/nums_usa.cor[nums_usa.dataset=='MERRA2'].max()
-ss_usa.loc[ss_usa.dataset=='ERA5','cor'] = nums_usa.cor[nums_usa.dataset=='ERA5']/nums_usa.cor[nums_usa.dataset=='ERA5'].max()
-ss_bra.loc[ss_bra.dataset=='MERRA2','cor'] = nums_bra.cor[nums_bra.dataset=='MERRA2']/nums_bra.cor[nums_bra.dataset=='MERRA2'].max()
-ss_bra.loc[ss_bra.dataset=='ERA5','cor'] = nums_bra.cor[nums_bra.dataset=='ERA5']/nums_bra.cor[nums_bra.dataset=='ERA5'].max()
-## add size parameter to results dataframe
-# extract dataset only without GWA
-results_BRA_tidy['ds'] = results_BRA_tidy.dataset
-results_BRA_tidy['dataset'] = results_BRA_tidy.dataset.str.split('_').apply(lambda x: x[0])
-results_USA_tidy['ds'] = results_USA_tidy.dataset
-results_USA_tidy['dataset'] = results_USA_tidy.dataset.str.split('_').apply(lambda x: x[0])
-# add size to results and use cols as index for matching
-cols = ['dataset','region','scale','temp']
-results_BRA_tidy['systemsize'] = results_BRA_tidy.set_index(cols).index.map(ss_bra.set_index(cols).cor)
-results_USA_tidy['systemsize'] = results_USA_tidy.set_index(cols[:-1]).index.map(ss_usa.set_index(cols[:-1]).cor)
+def merge_res_ss(sys_size,results,id_cols):
+    '''
+    function for merging the system size parameter and the results
+    
+    parameters:
+     sys_size: dataframe with system size indicator (column cor)
+     results: results of statistical analysis in tidy format
+     id_cols: columns in sys_size and results used to match the data
+    '''
+    # calculate "system size" as number between 0 and 1 by divinding by largest number of grid cells per dataset (country)
+    sys_size.loc[sys_size.dataset=='MERRA2','cor'] = sys_size.cor[sys_size.dataset=='MERRA2']/sys_size.cor[sys_size.dataset=='MERRA2'].max()
+    sys_size.loc[sys_size.dataset=='ERA5','cor'] = sys_size.cor[sys_size.dataset=='ERA5']/sys_size.cor[sys_size.dataset=='ERA5'].max()
+    # add size parameter to results dataframe
+    # extract dataset only without GWA
+    results['ds'] = results.dataset
+    results['dataset'] = results.dataset.str.split('_').apply(lambda x: x[0])
+    # add size to results and use cols as index for matching
+    results['systemsize'] = results.set_index(id_cols).index.map(sys_size.set_index(id_cols).cor)
+    return results
+
+# merge size parameter and results
+results_USAss = merge_res_ss(nums_usa,results_USA_tidy,['dataset','region','scale'])
+results_BRAss = merge_res_ss(nums_bra,results_BRA_tidy,['dataset','region','scale','temp'])
 
 ## Merge results
-results = pd.concat([results_USA_tidy,
-                     results_BRA_tidy],
+results = pd.concat([results_USAss,
+                     results_BRAss],
                     axis=0, sort=True, ignore_index=True)
 
 ## Clean up data
@@ -71,7 +78,7 @@ results.loc[(results.ds!='ERA5_GWA')&(results.ds!='MERRA2_GWA'),'GWA'] = 'none'
 results = results[~results.duplicated(subset=['country','ds','param','region','scale','systemsize','temp','value'])]
 # add gwa to dataset
 results['ds2'] = results.ds
-results['ds2'][results.GWA!='none'] = results.dataset[results.GWA!='none'] + '_' + results.GWA[results.GWA!='none']
+results.loc[results.GWA!='none','ds2'] = results.dataset[results.GWA!='none'] + '_' + results.GWA[results.GWA!='none']
 
 results.to_pickle(results_path + '/results_merged.pkl')
                     
