@@ -37,8 +37,8 @@ if GWA == "2":
         os.mkdir(results_path)
 
 # Simulate wind power with MERRA-2
-wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_NZ_*.nc", chunks = {'time': 46})
-alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_NZ_*.nc", chunks = {'time': 46})
+wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_NZ_*.nc", chunks = {'time': 46}).sel(time=slice('1997','2020'))
+alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_NZ_*.nc", chunks = {'time': 46}).sel(time=slice('1997','2020'))
 
 # load windpark data
 windparks = pd.read_csv(nz_path + "/windparks_NZ.csv", delimiter=';', parse_dates=['commissioning'])

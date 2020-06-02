@@ -38,8 +38,8 @@ if GWA == "2":
 
 
 # Simulate wind power with ERA5
-wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_NZ_*.nc", chunks = {'time': 46})
-alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_NZ_*.nc", chunks = {'time': 46})
+wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_NZ_*.nc", chunks = {'time': 46}).sel(time=slice('1997','2020'))
+alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_NZ_*.nc", chunks = {'time': 46}).sel(time=slice('1997','2020'))
 
 # load windpark data
 windparks = pd.read_csv(nz_path + "/windparks_NZ.csv", delimiter=';', parse_dates=['commissioning'])

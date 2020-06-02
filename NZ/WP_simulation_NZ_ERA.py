@@ -26,8 +26,8 @@ from paths_nz import *
 
 
 # Simulate wind power with ERA5
-wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_NZ_*.nc", chunks = {'time': 100})
-alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_NZ_*.nc", chunks = {'time': 100})
+wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_NZ_*.nc", chunks = {'time': 100}).sel(time=slice('1997','2020'))
+alpha = xr.open_mfdataset(era_path + "/eff_ws/era5_alpha_NZ_*.nc", chunks = {'time': 100}).sel(time=slice('1997','2020'))
 
 # load windpark data
 windparks = pd.read_csv(nz_path + "/windparks_NZ.csv", delimiter=';', parse_dates=['commissioning'])
