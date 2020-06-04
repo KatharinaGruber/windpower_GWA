@@ -34,5 +34,5 @@ do
     python WP_simulation_NZ_${DS}_GWA.py -GWA $GWA
 done
 
-#python WP_simulation_BRA_Analysis.py -GWA $GWA
+python WP_simulation_NZ_Analysis.py
 
