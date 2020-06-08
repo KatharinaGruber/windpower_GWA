@@ -35,7 +35,7 @@ windparks = pd.read_csv(nz_path + "/windparks_NZ.csv", delimiter=';', parse_date
 windparks['sp'] = windparks.turb_cap*10**6/(windparks.d_rotor**2*np.pi/4)
 
 # without GWA
-outfile = results_path + '/windpower_stat_ERA5.nc'
+outfile = results_path + '/windpower_NZ_ERA5.nc'
 
 if outfile not in glob.glob(results_path+'/*'):
 	wps = windpower_simulation_era5(wind.wh100,
