@@ -9,6 +9,7 @@ rp_usa = results_path + '/USA'
 rp_usa2 = rp_usa + '/results_GWA2'
 rp_bra = results_path + '/BRA'
 rp_bra2 = rp_bra + '/results_GWA2'
+rp_nz = results_path + '/NZ'
 
 ## Load USA data
 # load size indicator
@@ -41,6 +42,15 @@ results_BRA_GWA3 = pd.read_csv(rp_bra + '/stats_GWA3.csv',index_col=0)
 results_BRA_tidy = pd.concat([results_BRA_GWA2,results_BRA_GWA3],axis=0).rename({'location':'region'},axis=1)
 results_BRA_tidy['country'] = 'BRA'
 
+## Load NZ data
+# load size indicator
+nums_nz = pd.read_csv(rp_nz + '/number_grid_points.csv',index_col=0)
+nums_nz['country'] = 'NZ'
+# read results
+results_NZ_tidy = pd.read_csv(rp_nz + '/statNZ.csv',index_col=0)
+results_NZ_tidy.loc[results_NZ_tidy.GWA != 'none','ds'] = results_NZ_tidy.dataset[results_NZ_tidy.GWA != 'none'] + '_GWA'
+
+
 
 ## prepare results and size parameter for analysis
 def merge_res_ss(sys_size,results,id_cols):
@@ -66,10 +76,12 @@ def merge_res_ss(sys_size,results,id_cols):
 # merge size parameter and results
 results_USAss = merge_res_ss(nums_usa,results_USA_tidy,['dataset','region','scale'])
 results_BRAss = merge_res_ss(nums_bra,results_BRA_tidy,['dataset','region','scale','temp'])
+results_NZss = merge_res_ss(nums_nz,results_NZ_tidy,['dataset','scale','temp'])
 
 ## Merge results
 results = pd.concat([results_USAss,
-                     results_BRAss],
+                     results_BRAss,
+                     results_NZss],
                     axis=0, sort=True, ignore_index=True)
 
 ## Clean up data
