@@ -36,7 +36,10 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
                                            "y":xr.DataArray(lats,dims='location')},
                                    method="nearest").compute()
         # calculate correction factor
-        cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time')).compute()
+        try:
+            cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time')).compute()
+        except:
+            cf_GWA = (GWA_locations/wind.mean('time')).compute()
         # apply correction factor
         windhhg = (windhh * cf_GWA).compute()
         # replace wind speeds higher than 25 m/s with 0, because cutout windspeed
@@ -116,7 +119,10 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
                                            "y":xr.DataArray(lats,dims='location')},
                                    method="nearest").compute()
         # calculate correction factor
-        cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time')).compute()
+        try:
+            cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time')).compute()
+        except:
+            cf_GWA = (GWA_locations/wind.mean('time')).compute()
         # apply correction factor
         windhhg = windhh * cf_GWA
         # replace wind speeds higher than 25 m/s with 25, because maximum of power curve
