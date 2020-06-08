@@ -110,13 +110,13 @@ def load_results(dataset,gwa,parks):
     else:
         rpath = results_path + '/'
     if gwa == 'none':
-        file = 'winpower_NZ_'+dataset+'.nc'
+        file = 'windpower_NZ_'+dataset+'.nc'
     else:
-        file = 'winpower_NZ_'+dataset+'_GWA.nc'
+        file = 'windpower_NZ_'+dataset+'_GWA.nc'
     NZ = xr.open_dataset(rpath + file).wp.to_dataframe().reset_index().set_index(['time','location']).unstack()
     # adapt datetime index of MERRA data (some hours are shifted by 30 min)
     if dataset == 'MERRA2':
-        NZ.index.values[NZ.index.minute!=0] = NZ.idnex.values[NZ.index.minute!=0] - np.timedelta64(30,'m')
+        NZ.index.values[NZ.index.minute!=0] = NZ.index.values[NZ.index.minute!=0] - np.timedelta64(30,'m')
     # sum up Te Rere Hau and adapt names to generation data
     NZ = NZ.groupby(parks,axis=1).sum(axis=1).tz_localize('UTC')
     return(NZ)
