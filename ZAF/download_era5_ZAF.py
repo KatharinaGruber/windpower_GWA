@@ -1,102 +1,97 @@
-#!/usr/bin/env python
-# coding: utf-8
-""" Download ERA5 South Africa
-
-adapted from
-https://github.com/inwe-boku/wind_repower_usa/blob/master/scripts/download_wind_era5.py
-script for downloading era5 single levels data with cds api
-get account at:
-https://cds.climate.copernicus.eu/user/register?destination=%2F%23!%2Fhome
-check license agreement
-install csdapi and key: https://cds.climate.copernicus.eu/api-how-to
-(to create .cdsapirc file create text file and rename to .cdsapirc.)
-if using conda, make sure to install it via conda prompt
-see data you can download:
-https://cds.climate.copernicus.eu/cdsapp#!/dataset/reanalysis-era5-single-levels?tab=form
-data are availabe from 2000 until now
-for variables available see link above
+# -*- coding: utf-8 -*-
 """
+Created on Mon Apr 29 09:00:37 2019
 
+@author: KatharinaG
+
+adapted from source:
+https://github.com/inwe-boku/wind_repower_usa/blob/master/scripts/download_wind_era5.py
+"""
+import glob
 import os
 import os.path as op
 import logging
+
 import cdsapi
+import sys
+sys.path.append('../')
 
 from logging_config import setup_logging
+from multiprocessing import Pool
 
+from paths_zaf import era_path
 
-# folder where data shall be stored
-DOWNLOAD_DIR = os.getcwd()
+DOWNLOAD_DIR = era_path
+COUNTRY = 'ZAF'
 
-# and also find the bounding box
-lon1 = 16
-lon2 = 33
-lat1 = -35
-lat2 = -22
-bounding_box = [lat2, lon1, lat1, lon2]
-
-# acronym of the country
-country = 'ZAF'
-
-YEARS = range(2014, 2018)
+YEARS = range(2013, 2020)
 MONTHS = list(range(1, 13))
+
+north = -22
+south = -35
+west = 16
+east = 33
 
 setup_logging(op.join(DOWNLOAD_DIR, 'download.log'))
 
 
-def main():
+
+
+def download_era5(year):
     # API documentation for downloading a subset:
     # https://confluence.ecmwf.int/display/CKB/Global+data%3A+Download+data+from+ECMWF+for+a+particular+area+and+resolution
     # https://retostauffer.org/code/Download-ERA5/
+
+    # Format for downloading ERA5: North/West/South/East
+    bounding_box = "{}/{}/{}/{}".format(north, west, south, east)
 
     logging.info("Downloading bounding_box=%s for years=%s and months=%s",
                  bounding_box, YEARS, MONTHS)
 
     c = cdsapi.Client()
+    
+    if len(glob.glob(DOWNLOAD_DIR + '/era5_wind_' + COUNTRY + '_*.nc')) < (YEARS[-1] - YEARS[0] + 1) * 12:
+            for month in MONTHS:
+                filename = op.join(DOWNLOAD_DIR,
+                                   'era5_wind_' + COUNTRY + f'_{year}{month:02d}.nc')
 
-    for year in YEARS:
-        for month in MONTHS:
-            print(str(year)+str(month))
-            filename = op.join(DOWNLOAD_DIR,
-                               f'era5_wind_{country}_{year}{month:02d}.nc')
+                if op.exists(filename):
+                    logging.info(f"Skipping {filename}, already exists!")
+                    continue
 
-            if op.exists(filename):
-                logging.info(f"Skipping {filename}, already exists!")
-                continue
+                logging.info(f"Starting download of {filename}...")
 
-            logging.info(f"Starting download of {filename}...")
-
-            for i in range(5):
-                try:
-                    c.retrieve(
-                        'reanalysis-era5-single-levels',
-                        {
-                            'product_type': 'reanalysis',
-                            'format': 'netcdf',
-                            'variable': [
-                                '100m_u_component_of_wind',
-                                '100m_v_component_of_wind',
-                                '10m_u_component_of_wind',
-                                '10m_v_component_of_wind'
-                            ],
-                            'year': f'{year}',
-                            'month': [
-                                f'{month:02d}'
-                            ],
-                            'area': bounding_box,
-                            'day': [f"{day:02d}" for day in range(1, 32)],
-                            'time': [f"{hour:02d}:00" for hour in range(24)],
-                        },
-                        f"{filename}.part"
-                    )
-                except Exception as e:
-                    logging.warning("Download failed: %s", e)
+                for i in range(5):
+                    try:
+                        c.retrieve(
+                            'reanalysis-era5-single-levels',
+                            {
+                                'product_type': 'reanalysis',
+                                'format': 'netcdf',
+                                'variable': [
+                                    '100m_u_component_of_wind',
+                                    '100m_v_component_of_wind',
+                                    '10m_u_component_of_wind',
+                                    '10m_v_component_of_wind'
+                                ],
+                                'year': f'{year}',
+                                'month': [
+                                    f'{month:02d}'
+                                ],
+                                'area': bounding_box,
+                                'day': [f"{day:02d}" for day in range(1, 32)],
+                                'time': [f"{hour:02d}:00" for hour in range(24)],
+                            },
+                            f"{filename}.part"
+                        )
+                    except Exception as e:
+                        logging.warning("Download failed: %s", e)
+                    else:
+                        logging.info(f"Download of {filename} successful!")
+                        os.rename(f"{filename}.part", filename)
+                        break
                 else:
-                    logging.info(f"Download of {filename} successful!")
-                    os.rename(f"{filename}.part", filename)
-                    break
-            else:
-                logging.warning("Download failed permanently!")
+                    logging.warning("Download failed permanently!")
 
 
 def _cdsapi_download_with_timeout(self, url, size, target):
@@ -177,4 +172,5 @@ def patch_cdsapi():
 
 if __name__ == '__main__':
     patch_cdsapi()
-main()
+    pool = Pool()
+    pool.map(download_era5,YEARS)
