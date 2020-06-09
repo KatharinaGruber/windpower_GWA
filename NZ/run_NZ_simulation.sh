@@ -34,5 +34,7 @@ do
     python WP_simulation_NZ_${DS}_GWA.py -GWA $GWA
 done
 
+# analyse results
 python WP_simulation_NZ_Analysis.py
-
+# calculate grid size
+python number_reanalysis_grid_points.py
