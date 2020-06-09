@@ -11,19 +11,19 @@ import xarray as xr
 files = glob.glob(era_path+'/*.nc')
 files.sort()
 
-if not os.path.isdir(era_path + '/eff_ws30y'):
-    os.mkdir(era_path + '/eff_ws30y')
+if not os.path.isdir(era_path + '/eff_ws'):
+    os.mkdir(era_path + '/eff_ws')
 
-out_files = glob.glob(era_path + '/eff_ws30y/*')
+out_files = glob.glob(era_path + '/eff_ws/*')
 
 # 2013 - 2019
 i1 = 2013
 i2 = 2019
-wfile = era_path+'/eff_ws30y/era5_wind_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
-afile = era_path+'/eff_ws30y/era5_alpha_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
+wfile = era_path+'/eff_ws/era5_wind_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
+afile = era_path+'/eff_ws/era5_alpha_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
 if wfile not in out_files:
     print('calculating wind ' + str(i1) + '-' + str(i2))
-    data = xr.open_mfdataset(files, chunks = {'time': 46})
+    data = xr.open_mfdataset(files, chunks = {'time': 46}).sel(time=slice(str(i1),str(i2+1)))
     wh10 = ((data.u10**2+data.v10**2)**0.5).compute()
     wh100 = ((data.u100**2+data.v100**2)**0.5).compute()
     print('saving wind ' + str(i1) + '-' + str(i2))

@@ -23,7 +23,7 @@ wfile = mer_path+'/eff_ws/merra2_wind_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
 afile = mer_path+'/eff_ws/merra2_alpha_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
 if wfile not in out_files:
     print('calculating wind ' + str(i1) + '-' + str(i2))
-    data = xr.open_mfdataset(files, chunks = {'time': 46})
+    data = xr.open_mfdataset(files, chunks = {'time': 46}).sel(time=slice(str(i1),str(i2+1)))
     wh10 = ((data.U10M**2+data.V10M**2)**0.5).compute()
     wh50 = ((data.U50M**2+data.V50M**2)**0.5).compute()
     print('saving wind ' + str(i1) + '-' + str(i2))
