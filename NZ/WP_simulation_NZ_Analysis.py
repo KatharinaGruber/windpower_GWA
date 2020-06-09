@@ -31,7 +31,7 @@ def read_NZprod():
                 prod_NZ = prod_NZm[prod_NZm.Fuel_Code=="Wind"]
     return(prod_NZ)
 
-def prep_gen(loc):
+def prep_gen(loc,prod_NZts):
     '''
     helper function for preparing productiond data
      selects data of one wind park loc
@@ -82,7 +82,7 @@ def tidy_prod(prod_NZ):
     # separate data by datetimeindex and location
     # as neither POC Codes (te rere hau & twf 3) nor Gen Codes (twf 12) are unique - combine to get unique values per location
     prod_NZts['POC_Gen'] = prod_NZts.Gen_Code + prod_NZts.POC_Code 
-    prod_NZ = pd.Series(prod_NZts.POC_Gen.unique()).apply(prep_gen).transpose()
+    prod_NZ = pd.Series(prod_NZts.POC_Gen.unique()).apply(prep_gen,args=(prod_NZts,)).transpose()
     prod_NZ.columns = prod_NZts.POC_Gen.unique()
     # sum up both west wind
     prod_NZ['west_wind'] = prod_NZ.west_windWWD1102 + prod_NZ.west_windWWD1103
@@ -352,9 +352,9 @@ def tidy_res(results,temp,scale):
                       index = range(reduce(mul,results.shape)))
     return(pd.concat([rt,ts],axis=1))
 
-
 ## Analysis
 # load windpark data
+print('prepare windparks')
 windparks = pd.read_csv(nz_path + "/windparks_NZ.csv", delimiter=';', parse_dates=['commissioning'])
 # dictionary for matching data
 d = {'twf1':'twf_1',
@@ -370,11 +370,17 @@ d = {'twf1':'twf_1',
 # match wind park names
 parks = (windparks.ProjectName + windparks.stage.astype(str).replace({'0':''})).replace(d).values
 
+# load observed data
+print('load observed data')
+prod_NZh = tidy_prod(read_NZprod())
+
 # get capacitiy time series for all parks
+print('get capacities')
 pu = np.unique(parks)
 capdfH = pd.Series(pu,index = pu).apply(gcdH).transpose()
 
 # load simulated data
+print('load simulated data')
 NZm = load_results('MERRA2','none',parks)
 NZmg2 = load_results('MERRA2','GWA2',parks)
 NZmg3 = load_results('MERRA2','GWA3',parks)
@@ -384,16 +390,20 @@ NZeg3 = load_results('ERA5','GWA3',parks)
 
 # analyse results
 # hourly
+print('analyse hourly')
 resNZph = pd.concat(pd.Series(np.unique(parks)).apply(analyse_NZparkh).to_list(),axis=0)
 resNZh = analyse_NZh()
 # daily
+print('analyse daily')
 resNZpd = pd.concat(pd.Series(np.unique(parks)).apply(analyse_NZparkd).to_list(),axis=0)
 resNZd = analyse_NZd()
 # monthly
+print('analyse monthly')
 resNZpm = pd.concat(pd.Series(np.unique(parks)).apply(analyse_NZparkm).to_list(),axis=0)
 resNZm = analyse_NZm()
 
 # tidy and merge results
+print('tidy and merge results')
 rNZph = tidy_res(resNZph,'h','park')
 rNZh = tidy_res(resNZh,'h','country')
 rNZpd = tidy_res(resNZpd,'d','park')
@@ -404,4 +414,5 @@ results = pd.concat([rNZph,rNZh,rNZpd,rNZd,rNZpm,rNZm],axis=0)
 results['ds'] = results.dataset.str.split('_').apply(lambda x: x[0])
 results['GWA'] = (results.dataset.str.split('_')+['none']).apply(lambda x: x[1])
 # save results
+print('save results')
 results.to_csv(results_path + '/statNZ.csv')
