@@ -35,6 +35,6 @@ do
 done
 
 # analyse results
-#python WP_simulation_ZAF_Analysis.py
+python WP_simulation_ZAF_Analysis.py
 # calculate grid size
-#python number_reanalysis_grid_points.py
+python number_reanalysis_grid_points.py
