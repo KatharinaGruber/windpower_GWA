@@ -39,14 +39,16 @@ ip_era = in_seq_era.interp(coords={"lon":xr.DataArray(windparks.Longitude,dims='
 # merge sizes
 print('merge all sizes')
 # merge sizes per scale
-ngc_park = pd.DataFrame({'scale':'park',
-                         'dataset':['ERA5','MERRA2'],
-                         'cor':1})
-ngc_ZAF = pd.DataFrame({'scale':'country',
-                       'dataset':['ERA5','MERRA2'],
-                       'cor':[ip_era.x.unique().shape[0],ip_mer.x.unique().shape[0]]})
+ngc_cape = pd.DataFrame({'scale':'state',
+                         'dataset':np.repeat(['ERA5','MERRA2'],len(windparks.Area.unique())),
+                         'cor':pd.concat([ip_era.groupby(windparks.Area.rename('region')).apply(lambda p: len(p.x.unique())),
+                                          ip_era.groupby(windparks.Area.rename('region')).apply(lambda p: len(p.x.unique()))],axis=0)}).reset_index()
+ngc_ZAF = pd.DataFrame({'region':'ZAF',
+                        'scale':'country',
+                        'dataset':['ERA5','MERRA2'],
+                        'cor':[ip_era.x.unique().shape[0],ip_mer.x.unique().shape[0]]})
 # merge all scales
-ngc = pd.concat([ngc_park,ngc_ZAF]*3, axis=0)
+ngc = pd.concat([ngc_cape,ngc_ZAF]*3, axis=0)
 # add temp column (sizes are the same for all)
 ngc['temp'] = np.repeat(['m','d','h'],len(ngc)/3)
 # save system sizes calcualted by number of grid points
