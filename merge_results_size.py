@@ -10,6 +10,7 @@ rp_usa2 = rp_usa + '/results_GWA2'
 rp_bra = results_path + '/BRA'
 rp_bra2 = rp_bra + '/results_GWA2'
 rp_nz = results_path + '/NZ'
+rp_zaf = results_path + '/ZAF'
 
 ## Load USA data
 # load size indicator
@@ -47,10 +48,20 @@ results_BRA_tidy['country'] = 'BRA'
 nums_nz = pd.read_csv(rp_nz + '/number_grid_points.csv',index_col=0)
 nums_nz['country'] = 'NZ'
 # read results
-results_NZ_tidy = pd.read_csv(rp_nz + '/statNZ.csv',index_col=0)
-results_NZ_tidy.loc[results_NZ_tidy.GWA != 'none','ds'] = results_NZ_tidy.dataset[results_NZ_tidy.GWA != 'none'] + '_GWA'
+results_NZ_tidy = pd.read_csv(rp_nz + '/statNZ.csv',index_col=0).rename({'location':'region'},axis=1)
+results_NZ_tidy['country'] = 'NZ'
+results_NZ_tidy['dataset'] = results_NZ_tidy.ds.values.copy()
+results_NZ_tidy.loc[results_NZ_tidy.GWA != 'none','dataset'] = results_NZ_tidy.dataset[results_NZ_tidy.GWA != 'none'].copy() + '_GWA'
 
-
+## Load ZAF data
+# load size indicator
+nums_zaf = pd.read_csv(rp_zaf + '/number_grid_points.csv',index_col=0)
+nums_zaf['country'] = 'ZAF'
+# read results
+results_ZAF_tidy = pd.read_csv(rp_zaf + '/statZAF.csv',index_col=0).rename({'location':'region'},axis=1)
+results_ZAF_tidy['country'] = 'ZAF'
+results_ZAF_tidy['dataset'] = results_ZAF_tidy.ds.copy()
+results_ZAF_tidy.loc[results_ZAF_tidy.GWA != 'none','dataset'] = results_ZAF_tidy.dataset[results_ZAF_tidy.GWA != 'none'].copy() + '_GWA'
 
 ## prepare results and size parameter for analysis
 def merge_res_ss(sys_size,results,id_cols):
@@ -77,11 +88,13 @@ def merge_res_ss(sys_size,results,id_cols):
 results_USAss = merge_res_ss(nums_usa,results_USA_tidy,['dataset','region','scale'])
 results_BRAss = merge_res_ss(nums_bra,results_BRA_tidy,['dataset','region','scale','temp'])
 results_NZss = merge_res_ss(nums_nz,results_NZ_tidy,['dataset','scale','temp'])
+results_ZAFss = merge_res_ss(nums_zaf,results_ZAF_tidy,['dataset','scale','temp'])
 
 ## Merge results
 results = pd.concat([results_USAss,
                      results_BRAss,
-                     results_NZss],
+                     results_NZss,
+                     results_ZAFss],
                     axis=0, sort=True, ignore_index=True)
 
 ## Clean up data
@@ -93,4 +106,3 @@ results['ds2'] = results.ds
 results.loc[results.GWA!='none','ds2'] = results.dataset[results.GWA!='none'] + '_' + results.GWA[results.GWA!='none']
 
 results.to_pickle(results_path + '/results_merged.pkl')
-                    
