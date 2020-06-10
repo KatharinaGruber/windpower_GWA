@@ -88,7 +88,7 @@ def merge_res_ss(sys_size,results,id_cols):
 results_USAss = merge_res_ss(nums_usa,results_USA_tidy,['dataset','region','scale'])
 results_BRAss = merge_res_ss(nums_bra,results_BRA_tidy,['dataset','region','scale','temp'])
 results_NZss = merge_res_ss(nums_nz,results_NZ_tidy,['dataset','scale','temp'])
-results_ZAFss = merge_res_ss(nums_zaf,results_ZAF_tidy,['dataset','scale','temp'])
+results_ZAFss = merge_res_ss(nums_zaf,results_ZAF_tidy,['dataset','region','scale','temp'])
 
 ## Merge results
 results = pd.concat([results_USAss,
