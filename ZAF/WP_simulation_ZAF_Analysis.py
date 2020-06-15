@@ -34,16 +34,20 @@ def read_ZAFprod():
               ' Oktober ':'10.',
               ' November ':'11.',
               ' Dezember ':'12.'}
+    starts = [None,'2014-06-15','2017-10-10',None] # cut bad starts of time series
     prod_ZAF = []
-    for (file,region) in zip(files,regions):
+    for (file,region,start) in zip(files,regions,starts):
         ZAF = pd.read_csv(zaf_path + file,sep=';',parse_dates=[1])
         ZAF.columns =  ['year','date','technology','CF']
         ZAF = ZAF[ZAF.technology=='Onshore Wind\r\n'].drop(['technology','year'],axis=1)
         for month in months:
             ZAF.date = ZAF.date.str.replace(month,months.get(month)) # replace months by numbers
-        prod_ZAF.append(pd.Series(ZAF.CF.values,
-                                  index=pd.to_datetime(ZAF.date).values,
-                                  name=region).sort_index())
+        ZAFdf = pd.Series(ZAF.CF.values,
+                          index=pd.to_datetime(ZAF.date).values,
+                          name=region).sort_index()
+        if(start != None):
+            ZAFdf = ZAFdf[start:]
+        prod_ZAF.append(ZAFdf)
     return(pd.concat(prod_ZAF,axis=1).tz_localize('Africa/Johannesburg'))
 
 def load_results(dataset,gwa,regions):
