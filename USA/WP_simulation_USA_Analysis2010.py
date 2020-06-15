@@ -627,7 +627,7 @@ sNEm = prep_USAres(stats_NEm,'subsystem','m')
 
 stats = pd.concat([sUSAm, sREGm, sSTAm,
                    sTXh, sTXd,
-                   sBPAh, sBPAd, sBPAd,
+                   sBPAh, sBPAd, sBPAm,
                    sNEm], axis=0)
 stats['GWA'] = 'GWA' + str(GWA)
 
