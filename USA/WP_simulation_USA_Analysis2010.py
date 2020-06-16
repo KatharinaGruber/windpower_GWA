@@ -637,6 +637,8 @@ stats_TXh.index = pd.MultiIndex.from_product([['TX'],stats_TXh.index.values], na
 sTXh = prep_USAres(stats_TXh,'state','h')
 stats_TXd.index = pd.MultiIndex.from_product([['TX'],stats_TXd.index.values], names = ['state','param'])
 sTXd = prep_USAres(stats_TXd,'state','d')
+stats_TXm.index = pd.MultiIndex.from_product([['TX'],stats_TXm.index.values], names = ['state','param'])
+sTXm = prep_USAres(stats_TXm,'state','m')
 # BPA
 stats_BPAh.index = pd.MultiIndex.from_product([['BPA'],stats_BPAh.index.values], names = ['state','param'])
 sBPAh = prep_USAres(stats_BPAh,'subsystem','h')
@@ -649,7 +651,7 @@ stats_NEm.index = pd.MultiIndex.from_product([['NE'],stats_NEm.index.values], na
 sNEm = prep_USAres(stats_NEm,'subsystem','m')
 
 stats = pd.concat([sUSAm, sREGm, sSTAm,
-                   sTXh, sTXd,
+                   sTXh, sTXd, sTXm,
                    sBPAh, sBPAd, sBPAm,
                    sNEm], axis=0)
 stats['GWA'] = 'GWA' + str(GWA)
