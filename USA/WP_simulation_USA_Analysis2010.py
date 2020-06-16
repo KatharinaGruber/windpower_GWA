@@ -271,7 +271,7 @@ stats_statesm = pd.DataFrame()
 stats_statesm_r = pd.DataFrame()
 # drop states that have no data
 prod_USAm = prod_USAm[prod_USAm.columns[(~prod_USAm.isna()).sum()!=0]]
-states_USAm = prod_USAm.columns[[len(s)==2 for s in prod_USAm.columns]]
+states_USAm = prod_USAm.columns[[len(s)==2 for s in prod_USAm.columns]].drop('TX') # remove TX and use hourly aggregated data
 
 def analyse_statesm(state,rd = False):
     # merge data
@@ -374,6 +374,29 @@ stats_TXd_r = pd.DataFrame({'ERA5':stats(cf_TXd.ERA5['2010':],cf_TXd.wp_obs['201
 # save statistical results
 stats_TXd.to_csv(results_pathg+'/stats_TXd2010.csv')
 stats_TXd_r.to_csv(results_pathg+'/stats_TXd_r2010.csv',sep=';')
+
+# Texas Monthly
+# Prepare data
+# aggregate per month
+comp_TXm = comp_TXh.tz_convert('US/Central').resample('M').sum()
+# calculate capacity factors
+cf_TXm = comp_TXm.div(cap_TXm,axis=0).dropna()
+# Analyse
+stats_TXm = pd.DataFrame({'ERA5':stats(cf_TXm.ERA5['2010':],cf_TXm.wp_obs['2010':],False),
+                          'ERA5_GWA':stats(cf_TXm.ERA5_GWA['2010':],cf_TXm.wp_obs['2010':],False),
+                          'MERRA2':stats(cf_TXm.MERRA2['2010':],cf_TXm.wp_obs['2010':],False),
+                          'MERRA2_GWA':stats(cf_TXm.MERRA2_GWA['2010':],cf_TXm.wp_obs['2010':],False),
+                          'obs':[np.nan,np.nan,np.nan,cf_TXm.wp_obs['2010':].mean()]},
+                         index = ['cor','rmse','mbe','avg'])
+stats_TXm_r = pd.DataFrame({'ERA5':stats(cf_TXm.ERA5['2010':],cf_TXm.wp_obs['2010':]),
+                            'ERA5_GWA':stats(cf_TXm.ERA5_GWA['2010':],cf_TXm.wp_obs['2010':]),
+                            'MERRA2':stats(cf_TXm.MERRA2['2010':],cf_TXm.wp_obs['2010':]),
+                            'MERRA2_GWA':stats(cf_TXm.MERRA2_GWA['2010':],cf_TXm.wp_obs['2010':]),
+                            'obs':[np.nan,np.nan,np.nan,round(cf_TXm.wp_obs['2010':].mean(),2)]},
+                           index = ['cor','rmse','mbe','avg'])
+# save statistical results
+stats_TXm.to_csv(results_pathg+'/stats_TXm2010.csv')
+stats_TXm_r.to_csv(results_pathg+'/stats_TXm_r2010.csv',sep=';')
 
 
 ## BPA hourly + daily + monthly
