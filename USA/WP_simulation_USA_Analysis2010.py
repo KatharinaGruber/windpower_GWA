@@ -177,7 +177,7 @@ prod_USAm.index = pd.to_datetime(['{}-{}-01'.format(y, m) for y, m in zip(dates[
 prod_USAm = prod_USAm[prod_USAm.index < np.datetime64("2020-01-01")].tz_localize('US/Central')
 # adapt column names
 prod_USAm.columns = states
-# remove trailing 0s
+# remove leading 0s
 prod_USAm[prod_USAm.fillna(0).cumsum(axis=0)==0] = np.nan
 
 # Prepare simulated data
@@ -193,7 +193,7 @@ wp_USA.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
 wp_USAm = wp_USA.resample('M').sum()
 # combine data and calculate capacity factors
 cf_USAm = pd.concat([wp_USAm.div(cap_usam,axis=0),
-                      (prod_USAm.resample('M').sum()['USA']*10**6/(cap_usaIm*10**3))],axis=1).dropna()
+                      (prod_USAm['USA'].dropna().resample('M').sum()*10**6/(cap_usaIm*10**3))],axis=1).dropna()
 cf_USAm.columns = np.append(wp_USAm.columns,'wp_obs')
 # Analyse
 stats_USAm = pd.DataFrame({'ERA5':stats(cf_USAm.ERA5['2010':],cf_USAm.wp_obs['2010':],False),
@@ -236,7 +236,7 @@ def analyse_regionsm(region,rd=False):
     wpE_GWA_reg = wpE_GWA.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
     wpM_reg = wpM.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
     wpM_GWA_reg = wpM_GWA.loc[states_reg[region]].wp.unstack().transpose().sum(axis=1)
-    prod_regm = prod_USAm[region]
+    prod_regm = prod_USAm[region].dropna()
     # merge data
     wp_reg = pd.concat([wpE_reg,wpE_GWA_reg,wpM_reg,wpM_GWA_reg],axis=1).tz_localize('UTC').tz_convert('US/Central')
     wp_reg.columns = ['ERA5','ERA5_GWA','MERRA2','MERRA2_GWA']
@@ -284,7 +284,7 @@ def analyse_statesm(state,rd = False):
     wp_stm = wp_st.resample('M').sum()
     # combine data and calculate capacity factors
     cf_stm = pd.concat([wp_stm.div(cap_statesm[state],axis=0),
-                          (prod_USAm.resample('M').sum()[state]*10**6/(cap_statesm[state]))],axis=1).replace(np.inf, np.nan).dropna()[1:]
+                          (prod_USAm[state].dropna().resample('M').sum()*10**6/(cap_statesm[state]))],axis=1).replace(np.inf, np.nan).dropna()[1:]
     cf_stm.columns = np.append(wp_stm.columns,'wp_obs')
     # Analyse
     stats_stm = pd.DataFrame({'ERA5':stats(cf_stm.ERA5['2010':],cf_stm.wp_obs['2010':],rd),
