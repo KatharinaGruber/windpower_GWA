@@ -36,8 +36,11 @@ do
     bash run_USA_${DS}_GWA_simulation_large.sh 1 $GWA
 done
 
+echo "sum up regions"
 python sum_up_regions_USA.py -GWA $GWA
 
+echo "analysis"
 python WP_simulation_USA_Analysis2010.py -GWA $GWA
 
-python correlations_reanalysis_grid_points.py
+echo "calculate size parameter"
+python number_reanalysis_grid_points.py
