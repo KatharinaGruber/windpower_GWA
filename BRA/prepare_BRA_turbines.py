@@ -83,8 +83,8 @@ if bra_path + "/turbine_data.csv" not in glob.glob(bra_path + '/*.csv'):
 	# diameter: 100 m, height: 95 m
 	# there also is one windpark with little distance of rotor blades to ground (Esperança)
 	# - is this a problem?
-	wp_anl['diam'][wp_anl.diam==0] = 100
-	wp_anl['height'][wp_anl.height==0] = 95
+	wp_anl.loc[wp_anl.diam==0,'diam'] = 100
+	wp_anl.loc[wp_anl.height==0,'height'] = 95
 
 	# calculate specific power
 	wp_anl['sp'] = wp_anl.cap*1000/(wp_anl.diam**2/4*np.pi)
@@ -114,11 +114,11 @@ if bra_path + '/turbine_data_mer_gwa' + GWA + '.csv' not in glob.glob(bra_path +
 		                   "lat":xr.DataArray(turbine_data.lat,dims='location')},method="nearest").to_dataframe()
 	# Load GWA data and extract values at locations to find unique locations
 	if GWA == "3":
-		GWA_BRA = xr.open_dataarray(bra_path+'/GWA/GWA3_BRA50m.tif')
+		GWA_BRA = xr.open_rasterio(bra_path+'/GWA/GWA3_BRA50m.tif').drop('band')
 	else:
-		GWA_BRA = xr.open_rasterio(bra_path+'/GWA/GWA2_BRA50m.nc')
+		GWA_BRA = xr.open_dataarray(bra_path+'/GWA/GWA2_BRA50m.nc')
 	# interpolate GWA to all locations and compare if same locations from rea dataset match same locations from GWA
-	GWA_ip = GWA_BRA.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.lon,dims='location'),
+	GWA_ip = GWA_BRA.interp(coords={"x":xr.DataArray(turbine_data.lon,dims='location'),
 												"y":xr.DataArray(turbine_data.lat,dims='location')},
 										method="nearest").to_dataframe(name='GWA')
 	# create labels for accumulating data to determine which configuartions are unique label consists of:
@@ -184,11 +184,11 @@ if bra_path + '/turbine_data_mer_gwa' + GWA + '.csv' not in glob.glob(bra_path +
 		                   "lat":xr.DataArray(turbine_data.lat,dims='location')},method="nearest").to_dataframe()
 	# Load GWA data and extract values at locations to find unique locations	   
 	if GWA == "3":
-		GWA_BRA = xr.open_rasterio(bra_path+'/GWA/GWA3_BRA100m.tif')
+		GWA_BRA = xr.open_rasterio(bra_path+'/GWA/GWA3_BRA100m.tif').drop('band')
 	else:
 		GWA_BRA = xr.open_dataarray(bra_path+'/GWA/GWA2_BRA100m.nc')
 	# interpolate GWA to all locations and compare if same locations from rea dataset match same locations from GWA
-	GWA_ip = GWA_BRA.sel(band=1).interp(coords={"x":xr.DataArray(turbine_data.lon,dims='location'),
+	GWA_ip = GWA_BRA.interp(coords={"x":xr.DataArray(turbine_data.lon,dims='location'),
 		                                    "y":xr.DataArray(turbine_data.lat,dims='location')},
 		                            method="nearest").to_dataframe(name='GWA')
 	# create labels for accumulating data to determine which configuartions are unique label consists of:
