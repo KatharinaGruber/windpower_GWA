@@ -369,7 +369,9 @@ def analyseUSIh(parks):
     capUSIh = capdfH[parks.ANL_name]
     # calculate capacity factors
     cf_USIh = compUSIh.div(capUSIh,axis=0)
-    # remove capacity factors > 1
+    # replace CFs in simulated data >1 with 1
+    cf_USIh.iloc[:,:4][cf_USIh.iloc[:,:4]>1] = 1
+    # remove capacity factors in oserved data > 1
     cf_USIh = cf_USIh.mask(cf_USIh>1).dropna()
     stat_h = pd.DataFrame({'ERA5':stats(cf_USIh.ERA5,cf_USIh.wp_obs,False),
                            'ERA5_GWA':stats(cf_USIh.ERA5_GWA,cf_USIh.wp_obs,False),
@@ -394,7 +396,9 @@ def analyseUSId(parks):
     compUSId = compUSIhm.resample('D').sum()
     # calculate capacity factors
     cf_USId = compUSId.div(capUSId,axis=0)
-    # remove capacity factors > 1
+    # replace CFs in simulated data >1 with 1
+    cf_USId.iloc[:,:4][cf_USId.iloc[:,:4]>1] = 1
+    # remove capacity factors in observed data > 1
     cf_USId = cf_USId.mask(cf_USId>1).dropna()
     stat_d = pd.DataFrame({'ERA5':stats(cf_USId.ERA5,cf_USId.wp_obs,False),
                            'ERA5_GWA':stats(cf_USId.ERA5_GWA,cf_USId.wp_obs,False),
@@ -419,7 +423,9 @@ def analyseUSIm(parks):
     compUSIm = compUSIhm.resample('M').sum()
     # calculate capacity factors
     cf_USIm = compUSIm.div(capUSIm,axis=0)
-    # remove capacity factors > 1
+    # replace CFs in simulated data >1 with 1
+    cf_USIm.iloc[:,:4][cf_USIm.iloc[:,:4]>1] = 1
+    # remove capacity factors in observed data > 1
     cf_USIm = cf_USIm.mask(cf_USIm>1).dropna()
     stat_m = pd.DataFrame({'ERA5':stats(cf_USIm.ERA5,cf_USIm.wp_obs,False),
                            'ERA5_GWA':stats(cf_USIm.ERA5_GWA,cf_USIm.wp_obs,False),
