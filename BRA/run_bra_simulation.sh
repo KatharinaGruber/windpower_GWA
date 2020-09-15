@@ -22,6 +22,12 @@ else
     GWA="3"
 fi
 
+if [ $GWA = "2" ]
+then
+	echo "cut out GWA2"
+	python cut_GWA2.py
+fi
+
 # prepare turbine data
 python prepare_BRA_turbines.py -GWA $GWA
 
@@ -33,8 +39,6 @@ do
     echo "simulate " $DS "GWA"
     bash run_BRA_${DS}_GWA_simulation.sh 1 $GWA
 done
-
-python sum_up_regions_BRA.py -GWA $GWA
 
 python WP_simulation_BRA_Analysis.py -GWA $GWA
 
