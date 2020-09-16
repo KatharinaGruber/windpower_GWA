@@ -24,7 +24,7 @@ from paths_nz import era_path
 DOWNLOAD_DIR = era_path
 COUNTRY = 'NZ'
 
-YEARS = range(1997, 2020)
+YEARS = range(1987, 2020)
 MONTHS = list(range(1, 13))
 
 north = -34

@@ -23,7 +23,7 @@ from paths_usa import mer_path
 from merra_cred import user, password
 
 
-yms = np.char.replace(np.arange(np.datetime64('2000-12'),
+yms = np.char.replace(np.arange(np.datetime64('1987-01'),
                                 np.datetime64('2020-01')).astype('str'),'-','')
 region = 'USA'
 

@@ -24,7 +24,7 @@ from paths_bra import era_path
 DOWNLOAD_DIR = era_path
 COUNTRY = 'BRA'
 
-YEARS = range(2006, 2020)
+YEARS = range(1987, 2020)
 MONTHS = list(range(1, 13))
 
 north = 5.5

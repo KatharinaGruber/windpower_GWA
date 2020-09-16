@@ -24,7 +24,7 @@ from paths_usa import era_path
 DOWNLOAD_DIR = era_path
 COUNTRY = 'USA'
 
-YEARS = range(2001, 2020)
+YEARS = range(1987, 2020)
 MONTHS = list(range(1, 13))
 
 north = 68

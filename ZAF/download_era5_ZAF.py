@@ -24,7 +24,7 @@ from paths_zaf import era_path
 DOWNLOAD_DIR = era_path
 COUNTRY = 'ZAF'
 
-YEARS = range(2013, 2020)
+YEARS = range(1987, 2020)
 MONTHS = list(range(1, 13))
 
 north = -22
