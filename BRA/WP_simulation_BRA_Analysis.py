@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import *
 from fuzzywuzzy import fuzz
+import argparse
 import glob
 import numpy as np
 import pandas as pd
@@ -18,6 +19,19 @@ setup()
 from utils import *
 
 gen_path = bra_path + '/generation'
+
+# get GWA version
+parser = argparse.ArgumentParser(description='Insert optionally GWA')
+parser.add_argument('-GWA')
+args = parser.parse_args()
+if(args.GWA == None):
+    GWA = "3"
+else:
+    GWA = args.GWA
+
+if GWA == "2":
+    results_path2 = results_path
+    results_path = results_path + '/results_GWA2'
 
 
 # load generation data
@@ -238,8 +252,12 @@ ANLd.columns = ['simpl','orig']
 # load simulated data
 # prepare simulated data as dataframe
 if (results_path + '/wpUSI_MER.pkl' not in glob.glob(results_path + '/*.pkl')):
-    wpERAxr = xr.open_dataset(results_path + '/windpower_stat_ERA5.nc',chunks={'time':80})
-    wpMERxr = xr.open_dataset(results_path + '/windpower_stat_MERRA2.nc',chunks={'time':80})
+    if GWA == "2":
+        wpERAxr = xr.open_dataset(results_path2 + '/windpower_stat_ERA5.nc',chunks={'time':80})
+        wpMERxr = xr.open_dataset(results_path2 + '/windpower_stat_MERRA2.nc',chunks={'time':80})
+    else:
+        wpERAxr = xr.open_dataset(results_path + '/windpower_stat_ERA5.nc',chunks={'time':80})
+        wpMERxr = xr.open_dataset(results_path + '/windpower_stat_MERRA2.nc',chunks={'time':80})
     wpERAgxr = xr.open_mfdataset(results_path +'/windpower_??_ERA5_GWA.nc',chunks={'time':80})
     wpMERgxr = xr.open_mfdataset(results_path +'/windpower_??_MERRA2_GWA.nc',chunks={'time':80})
     
@@ -288,7 +306,7 @@ else:
 # 0. remove leading and trailing 0s in observed data (replace by nans)
 wpUSIhs[wpUSIhs.fillna(0).cumsum(axis=0)==0] = np.nan # remove leading 0s
 wpUSIhs[wpUSIhs[::-1].fillna(0).cumsum(axis=0)[::-1]==0] = np.nan # remove trailing 0s
-# 1. get  matching power generation timeseries 
+# 1. get matching power generation timeseries
 matches2 = pd.DataFrame({'ANL_name':matches.ANL_name.map(ANLd.drop_duplicates()),
                          'ONS_name':matches.ONS_name.map(ONSd),
                          'score':matches.score}) # put ANEEL and ONS together into dataframe
@@ -371,7 +389,7 @@ def analyseUSIh(parks):
     cf_USIh = compUSIh.div(capUSIh,axis=0)
     # replace CFs in simulated data >1 with 1
     cf_USIh.iloc[:,:4][cf_USIh.iloc[:,:4]>1] = 1
-    # remove capacity factors in oserved data > 1
+    # remove capacity factors in observed data > 1
     cf_USIh = cf_USIh.mask(cf_USIh>1).dropna()
     stat_h = pd.DataFrame({'ERA5':stats(cf_USIh.ERA5,cf_USIh.wp_obs,False),
                            'ERA5_GWA':stats(cf_USIh.ERA5_GWA,cf_USIh.wp_obs,False),
@@ -705,5 +723,5 @@ sBRAm['scale'] = 'country'
 stats = pd.concat([sUSIh, sESTh, sBRAh,
                    sUSId, sESTd, sBRAd,
                    sUSIm, sESTm, sBRAm], axis=0)
-stats['GWA'] = 'GWA3'
-stats.to_csv(results_path + '/stats_GWA3.csv')
+stats['GWA'] = 'GWA' + GWA
+stats.to_csv(results_path + '/stats_GWA' + GWA + '.csv')
