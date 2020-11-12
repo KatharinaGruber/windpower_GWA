@@ -31,7 +31,7 @@ var = ['DISPH', 'U10M', 'U50M', 'V10M', 'V50M']
 
 lat1 = -36
 lat2 = 5.5
-lon1 = -74.1
+lon1 = -73.5
 lon2 = -33
 
 opath = mer_path
@@ -51,7 +51,7 @@ def dl_month_usa(ym):
         os.mkdir(opath + '/temp')
     download_month(ym, lon1, lat1, lon2, lat2, var, user, password, opath + '/temp')
 
-    files = glob.glob(opath + '/temp/MERRA2_???.tavg1_2d_slv_Nx.' + ym + '??.nc4.nc')
+    files = glob.glob(opath + '/temp/MERRA2_???.tavg1_2d_slv_Nx.' + ym + '??.nc4.nc4')
 
     d = xr.open_mfdataset(files)
 
@@ -62,5 +62,5 @@ def dl_month_usa(ym):
         os.remove(file)
         
 if __name__ == '__main__':
-    pool = Pool()
+    pool = Pool(10)
     pool.map(dl_month_usa,yms)
