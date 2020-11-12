@@ -5,7 +5,7 @@ import pandas as pd
 
 from paths import ryberg_path
 
-def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,startsim,GWA=[],startGWA=0,endGWA=0):
     '''
     function for simulating wind power generation
     
@@ -21,11 +21,19 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
     '''
     
     # interpolate wind to locations of turbines
-    wind = windh100.interp(coords={"longitude":xr.DataArray(lons,dims='location'),
-                                   "latitude":xr.DataArray(lats,dims='location')},method="nearest").compute()
+    # for the simulation
+    wind = windh100.sel(time=slice(startsim,'2020')).interp(coords={"longitude":xr.DataArray(lons,dims='location'),
+                                                                    "latitude":xr.DataArray(lats,dims='location')},
+                                                                    method="nearest").compute()
+    # if GWA is used compute mean wind speed for GWA
+    if(len(GWA)>0):
+        mwind = windh100.sel(time=slice(startGWA,endGWA)).interp(coords={"longitude":xr.DataArray(lons,dims='location'),
+                                                                         "latitude":xr.DataArray(lats,dims='location')},
+                                                                         method="nearest").mean('time').compute()
     # interpolate alpha to locations of turbines
-    alphai = alpha.interp(coords={"longitude":xr.DataArray(lons,dims='location'),
-                                  "latitude":xr.DataArray(lats,dims='location')},method="nearest").compute()
+    alphai = alpha.sel(time=slice(startsim,'2020')).interp(coords={"longitude":xr.DataArray(lons,dims='location'),
+                                                                   "latitude":xr.DataArray(lats,dims='location')},
+                                                                   method="nearest").compute()
     # calculate wind at hubheight using alpha
     windhh = (wind * (hubheight/100)**alphai).compute()
     
@@ -37,9 +45,9 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
                                    method="nearest").compute()
         # calculate correction factor
         try:
-            cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time')).compute()
+            cf_GWA = (GWA_locations.sel(band=1)/mwind).compute()
         except:
-            cf_GWA = (GWA_locations/wind.mean('time')).compute()
+            cf_GWA = (GWA_locations/mwind).compute()
         # apply correction factor
         windhhg = (windhh * cf_GWA).compute()
         # replace wind speeds higher than 25 m/s with 0, because cutout windspeed
@@ -88,7 +96,7 @@ def windpower_simulation_era5(windh100,alpha,hubheight,capacity,specific_pow,lon
 
 
     
-def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,startsim,GWA=[],startGWA=0,endGWA=0):
     '''
     function for simulating wind power generation
     
@@ -104,11 +112,19 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
     '''
     
     # interpolate wind to locations of turbines
-    wind = windh50.interp(coords={"lon":xr.DataArray(lons,dims='location'),
-                                  "lat":xr.DataArray(lats,dims='location')},method="nearest").compute()
-    
-    alphai = alpha.interp(coords={"lon":xr.DataArray(lons,dims='location'),
-                                  "lat":xr.DataArray(lats,dims='location')},method="nearest").compute()
+    # for the simulation
+    wind = windh50.sel(time=slice(startsim,'2020')).interp(coords={"lon":xr.DataArray(lons,dims='location'),
+                                                                   "lat":xr.DataArray(lats,dims='location')},
+                                                                   method="nearest").compute()
+    # if GWA is used compute mean wind speed for GWA
+    if(len(GWA)>0):
+        mwind = windh50.sel(time=slice(startGWA,endGWA)).interp(coords={"lon":xr.DataArray(lons,dims='location'),
+                                                                        "lat":xr.DataArray(lats,dims='location')},
+                                                                        method="nearest").mean('time').compute()
+    # interpolate alpha to locations of turbines
+    alphai = alpha.sel(time=slice(startsim,'2020')).interp(coords={"lon":xr.DataArray(lons,dims='location'),
+                                                                   "lat":xr.DataArray(lats,dims='location')},
+                                                                   method="nearest").compute()
     # calculate wind at hubheight using alpha
     windhh = (wind * (hubheight/50)**alphai).compute()
     
@@ -120,9 +136,9 @@ def windpower_simulation_merra2(windh50,alpha,hubheight,capacity,specific_pow,lo
                                    method="nearest").compute()
         # calculate correction factor
         try:
-            cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time')).compute()
+            cf_GWA = (GWA_locations.sel(band=1)/mwind).compute()
         except:
-            cf_GWA = (GWA_locations/wind.mean('time')).compute()
+            cf_GWA = (GWA_locations/mwind).compute()
         # apply correction factor
         windhhg = windhh * cf_GWA
         # replace wind speeds higher than 25 m/s with 25, because maximum of power curve
@@ -206,13 +222,21 @@ def powerfunc(wind, CF, v):
     
     
 # functions for handling larger states (with more locations)
-def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,startsim,GWA=[],startGWA=0,endGWA=0):
     # interpolate wind to locations of turbines
-    wind = windh100.interp(coords={"longitude":xr.DataArray(lons,dims='location'),
-                                   "latitude":xr.DataArray(lats,dims='location')},method="nearest")
+    # for the simulation
+    wind = windh100.sel(time=slice(startsim,'2020')).interp(coords={"longitude":xr.DataArray(lons,dims='location'),
+                                                                    "latitude":xr.DataArray(lats,dims='location')},
+                                                                    method="nearest")
+    # if GWA is used compute mean wind speed for GWA
+    if(len(GWA)>0):
+        mwind = windh100.sel(time=slice(startGWA,endGWA)).interp(coords={"longitude":xr.DataArray(lons,dims='location'),
+                                                                         "latitude":xr.DataArray(lats,dims='location')},
+                                                                         method="nearest").mean('time')
     # interpolate alpha to locations of turbines
-    alphai = alpha.interp(coords={"longitude":xr.DataArray(lons,dims='location'),
-                                  "latitude":xr.DataArray(lats,dims='location')},method="nearest")
+    alphai = alpha.sel(time=slice(startsim,'2020')).interp(coords={"longitude":xr.DataArray(lons,dims='location'),
+                                                                   "latitude":xr.DataArray(lats,dims='location')},
+                                                                   method="nearest")
     # calculate wind at hubheight using alpha
     windhh = (wind * (hubheight/100)**alphai)
 
@@ -223,7 +247,7 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
                                            "y":xr.DataArray(lats,dims='location')},
                                    method="nearest")
         # calculate correction factor
-        cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time'))
+        cf_GWA = GWA_locations.sel(band=1)/mwind
         # apply correction factor
         windhhg = (windhh * cf_GWA)
         # replace wind speeds higher than 25 m/s with 0, because cutout windspeed
@@ -268,13 +292,21 @@ def windpower_simulation_era5_large(windh100,alpha,hubheight,capacity,specific_p
 
     return(wp3)
     
-def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,GWA=[]):
+def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_pow,lons,lats,commissioning,startsim,GWA=[],startGWA=0,endGWA=0):
     # interpolate wind to locations of turbines
-    wind = windh50.interp(coords={"lon":xr.DataArray(lons,dims='location'),
-                                  "lat":xr.DataArray(lats,dims='location')},method="nearest")
+    # for the simulation
+    wind = windh50.sel(time=slice(startsim,'2020')).interp(coords={"lon":xr.DataArray(lons,dims='location'),
+                                                                   "lat":xr.DataArray(lats,dims='location')},
+                                                                   method="nearest")
+    # if GWA is used compute mean wind speed for GWA
+    if(len(GWA)>0):
+        mwind = windh50.sel(time=slice(startGWA,endGWA)).interp(coords={"lon":xr.DataArray(lons,dims='location'),
+                                                                        "lat":xr.DataArray(lats,dims='location')},
+                                                                        method="nearest").mean('time')
     # interpolate alpha to locations of turbines
-    alphai = alpha.interp(coords={"lon":xr.DataArray(lons,dims='location'),
-                                  "lat":xr.DataArray(lats,dims='location')},method="nearest")
+    alphai = alpha.sel(time=slice(startsim,'2020')).interp(coords={"lon":xr.DataArray(lons,dims='location'),
+                                                                   "lat":xr.DataArray(lats,dims='location')},
+                                                                   method="nearest")
     # calculate wind at hubheight using alpha
     windhh = (wind * (hubheight/50)**alphai)
 
@@ -285,7 +317,7 @@ def windpower_simulation_merra2_large(windh50,alpha,hubheight,capacity,specific_
                                            "y":xr.DataArray(lats,dims='location')},
                                    method="nearest")
         # calculate correction factor
-        cf_GWA = (GWA_locations.sel(band=1)/wind.mean('time'))
+        cf_GWA = GWA_locations.sel(band=1)/mwind
         # apply correction factor
         windhhg = (windhh * cf_GWA)
         # replace wind speeds higher than 25 m/s with 0, because cutout windspeed

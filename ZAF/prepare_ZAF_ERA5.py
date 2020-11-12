@@ -16,8 +16,8 @@ if not os.path.isdir(era_path + '/eff_ws'):
 
 out_files = glob.glob(era_path + '/eff_ws/*')
 
-# 2013 - 2019
-i1 = 2013
+# 1987 - 2019
+i1 = 1987
 i2 = 2019
 wfile = era_path+'/eff_ws/era5_wind_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
 afile = era_path+'/eff_ws/era5_alpha_ZAF_' + str(i1) + '-' + str(i2) + '.nc'

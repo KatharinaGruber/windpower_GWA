@@ -16,8 +16,8 @@ if not os.path.isdir(mer_path + '/eff_ws'):
 
 out_files = glob.glob(mer_path + '/eff_ws/*')
 
-# 2013 - 2019
-i1 = 2013
+# 1987 - 2019
+i1 = 1987
 i2 = 2019
 wfile = mer_path+'/eff_ws/merra2_wind_ZAF_' + str(i1) + '-' + str(i2) + '.nc'
 afile = mer_path+'/eff_ws/merra2_alpha_ZAF_' + str(i1) + '-' + str(i2) + '.nc'

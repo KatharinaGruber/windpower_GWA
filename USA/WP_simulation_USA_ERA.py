@@ -27,6 +27,8 @@ ProgressBar().register()
 
 from paths_usa import *
 
+# define start date for simulation
+startyearmonth = '2000-12'
 
 # Simulate wind power with ERA5
 wind = xr.open_mfdataset(era_path + "/eff_ws/era5_wind_USA_*.nc", chunks = {'time': 38})
@@ -43,6 +45,7 @@ if outfile not in glob.glob(results_path+'/*'):
                                           turbine_data_era.sp.values,
                                           turbine_data_era.lon.values,
                                           turbine_data_era.lat.values,
-                                          pd.to_datetime(turbine_data_era.commissioning.values).year.values)
+                                          pd.to_datetime(turbine_data_era.commissioning.values).year.values,
+                                          startyearmonth)
 	# save as netcdf
 	wps.to_dataset(name='wp').to_netcdf(outfile)

@@ -15,10 +15,10 @@ ProgressBar().register()
 windparks = pd.read_csv(zaf_path + "/windparks_ZAF.csv", parse_dates=['commissioning'])
 
 # open wind files
-wind_mer = xr.open_dataset(mer_path + "/eff_ws/merra2_wind_ZAF_2013-2019.nc", chunks = {'time': 100})
-alpha_mer = xr.open_dataset(mer_path + "/eff_ws/merra2_alpha_ZAF_2013-2019.nc", chunks = {'time': 100})
-wind_era = xr.open_dataset(era_path + "/eff_ws/era5_wind_ZAF_2013-2019.nc", chunks = {'time': 100})
-alpha_era = xr.open_dataset(era_path + "/eff_ws/era5_alpha_ZAF_2013-2019.nc", chunks = {'time': 100})
+wind_mer = xr.open_dataset(mer_path + "/eff_ws/merra2_wind_ZAF_1987-2019.nc", chunks = {'time': 100})
+alpha_mer = xr.open_dataset(mer_path + "/eff_ws/merra2_alpha_ZAF_1987-2019.nc", chunks = {'time': 100})
+wind_era = xr.open_dataset(era_path + "/eff_ws/era5_wind_ZAF_1987-2019.nc", chunks = {'time': 100})
+alpha_era = xr.open_dataset(era_path + "/eff_ws/era5_alpha_ZAF_1987-2019.nc", chunks = {'time': 100})
 
 # Create dataframe with sequence the size of MERRA-2 grid to find out which turbines interpolate to the same point
 in_seq_mer = xr.Dataset({'x':(['lat','lon'],

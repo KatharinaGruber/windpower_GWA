@@ -41,7 +41,15 @@ else:
 
 if GWA == "2":
     results_path = results_path + '/results_GWA2'
-
+    if not os.path.exists(results_path):
+        os.mkdir(results_path)
+    startGWA = '1987'
+    endGWA = '2016'
+else:
+    startGWA = '2008'
+    endGWA = '2017'
+# define start date for simulation
+startyearmonth = '2000-12'
 
 outfile = results_path + '/windpower_??_MERRA2_GWA.nc'
 if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outfile):
@@ -88,7 +96,10 @@ if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outf
                                                     turbine_data_mer_gwa.lon[ind].values[i1:i2],
                                                     turbine_data_mer_gwa.lat[ind].values[i1:i2],
                                                     pd.to_datetime(turbine_data_mer_gwa.commissioning[ind].values[i1:i2]).year.values,
-                                                    GWA)
+                                                    startyearmonth,
+                                                    GWA,
+                                                    startGWA,
+                                                    endGWA)
             # adapt numbers of locations in dataset
             wps = wps.assign_coords(location = np.arange(i1,i2))
             # save temporary file

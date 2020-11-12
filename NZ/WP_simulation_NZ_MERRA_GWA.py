@@ -35,10 +35,17 @@ if GWA == "2":
     results_path = results_path + '/results_GWA2'
     if not os.path.exists(results_path):
         os.mkdir(results_path)
+    startGWA = '1987'
+    endGWA = '2016'
+else:
+    startGWA = '2008'
+    endGWA = '2017'
+# define start date for simulation
+startyear = '1997'
 
 # Simulate wind power with MERRA-2
-wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_NZ_*.nc", chunks = {'time': 46}).sel(time=slice('1997','2020'))
-alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_NZ_*.nc", chunks = {'time': 46}).sel(time=slice('1997','2020'))
+wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_NZ_*.nc", chunks = {'time': 46})#.sel(time=slice('1997','2020'))
+alpha = xr.open_mfdataset(mer_path + "/eff_ws/merra2_alpha_NZ_*.nc", chunks = {'time': 46})#.sel(time=slice('1997','2020'))
 
 # load windpark data
 windparks = pd.read_csv(nz_path + "/windparks_NZ.csv", delimiter=';', parse_dates=['commissioning'])
@@ -62,7 +69,10 @@ if results_path + '/windpower_NZ_MERRA2_GWA.nc' not in glob.glob(outfile):
                                       windparks.Longitude.values,
                                       windparks.Latitude.values,
                                       windparks.commissioning.values,
-                                      GWA)
+                                      startyear,
+                                      GWA,
+                                      startGWA,
+                                      endGWA)
 
     # save as netcdf
     wps.drop(['x','y']).to_dataset(name='wp').to_netcdf(results_path+"/windpower_NZ_MERRA2_GWA.nc")

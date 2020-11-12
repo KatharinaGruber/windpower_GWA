@@ -37,6 +37,13 @@ if GWA == "2":
     results_path = results_path + '/results_GWA2'
     if not os.path.exists(results_path):
         os.mkdir(results_path)
+    startGWA = '1987'
+    endGWA = '2016'
+else:
+    startGWA = '2008'
+    endGWA = '2017'
+# define start date for simulation
+startyear = '2006'
 
 # Simulate wind power with MERRA-2
 wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_BRA_*.nc", chunks = {'time': 100})
@@ -61,6 +68,9 @@ if results_path + '/windpower_' + state + '_MERRA2_GWA.nc' not in glob.glob(outf
                                       turbine_data.lon.values[ind],
                                       turbine_data.lat.values[ind],
                                       turbine_data.commissioning.values[ind],
-                                      GWA)
+                                      startyear,
+                                      GWA,
+                                      startGWA,
+                                      endGWA)
     # save as netcdf
     wps.drop(['x','y']).to_dataset(name='wp').to_netcdf(results_path+"/windpower_"+state+"_MERRA2_GWA.nc")

@@ -19,7 +19,6 @@ from matplotlib import pyplot as plt
 from scipy.interpolate import interp1d
 
 from utils import power_curve
-from utils import windpower_simulation_era5
 from utils import windpower_simulation_merra2
 
 
@@ -28,6 +27,8 @@ ProgressBar().register()
 
 from paths_usa import *
 
+# define start date for simulation
+startyearmonth = '2000-12'
 
 # Simulate wind power with MERRA-2
 wind = xr.open_mfdataset(mer_path + "/eff_ws/merra2_wind_USA_*.nc", chunks = {'time': 38})
@@ -44,6 +45,7 @@ if outfile not in glob.glob(results_path+'/*'):
 									  turbine_data_mer.sp.values,
 									  turbine_data_mer.lon.values,
 									  turbine_data_mer.lat.values,
-                                      pd.to_datetime(turbine_data_mer.commissioning.values).year.values)
+                                      pd.to_datetime(turbine_data_mer.commissioning.values).year.values,
+                                      startyearmonth)
 	# save as netcdf
 	wps.to_dataset(name='wp').to_netcdf(outfile)

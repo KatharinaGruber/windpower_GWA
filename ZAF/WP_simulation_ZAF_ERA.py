@@ -28,8 +28,8 @@ if not os.path.isdir(results_path):
     os.mkdir(results_path)
 
 # Simulate wind power with ERA5
-wind = xr.open_dataset(era_path + "/eff_ws/era5_wind_ZAF_2013-2019.nc", chunks = {'time': 100})
-alpha = xr.open_dataset(era_path + "/eff_ws/era5_alpha_ZAF_2013-2019.nc", chunks = {'time': 100})
+wind = xr.open_dataset(era_path + "/eff_ws/era5_wind_ZAF_1987-2019.nc", chunks = {'time': 100})
+alpha = xr.open_dataset(era_path + "/eff_ws/era5_alpha_ZAF_1987-2019.nc", chunks = {'time': 100})
 
 # load windpark data
 windparks = pd.read_csv(zaf_path + "/windparks_ZAF.csv", parse_dates=['commissioning'])
