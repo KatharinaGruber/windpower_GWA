@@ -35,6 +35,7 @@ if GWA == "2":
 
 
 # load generation data
+print('load generation data')
 # load usinas hourly
 if gen_path + '/hourly/usinas.pkl' not in glob.glob(gen_path + '/hourly/*.pkl'):
     USIh = pd.read_csv(gen_path + '/hourly/Comparativo_Geração_de_Energia_Semana_data_usinas.csv',
@@ -100,6 +101,7 @@ def match_anl(string):
     # function to match ONS to ANL windparks
     return(match_string(string,ANL2.name))
 
+print('match wind parks')
 # load ANEEL and ONS windparks
 ONS = pd.read_csv(bra_path + '/ONS_windparks.csv', index_col = 0)
 # remove those with CONJUNTO EOLICO - they're there twice and capacities don't match with ANEEL data
@@ -250,6 +252,7 @@ ANLd.columns = ['simpl','orig']
 
 
 # load simulated data
+print('load simulated data')
 # prepare simulated data as dataframe
 if (results_path + '/wpUSI_MER.pkl' not in glob.glob(results_path + '/*.pkl')):
     if GWA == "2":
@@ -263,10 +266,10 @@ if (results_path + '/wpUSI_MER.pkl' not in glob.glob(results_path + '/*.pkl')):
     
     turb_mer = pd.read_csv(bra_path + '/turbine_data_mer.csv',index_col=0)
     turb_era = pd.read_csv(bra_path + '/turbine_data_era.csv',index_col=0)
-    turb_merg = pd.read_csv(bra_path + '/turbine_data_mer_gwa3.csv',index_col=0)
-    turb_erag = pd.read_csv(bra_path + '/turbine_data_era_gwa3.csv',index_col=0)
+    turb_merg = pd.read_csv(bra_path + '/turbine_data_mer_gwa' + GWA + '.csv',index_col=0)
+    turb_erag = pd.read_csv(bra_path + '/turbine_data_era_gwa' + GWA + '.csv',index_col=0)
     
-    lbl = pd.read_csv(bra_path+ '/labels_turbine_data_gwa3.csv',index_col=0)
+    lbl = pd.read_csv(bra_path+ '/labels_turbine_data_gwa' + GWA + '.csv',index_col=0)
     
     wpMERdf = wpMERxr.to_dataframe().unstack().wp
     wpERAdf = wpERAxr.to_dataframe().unstack().wp
@@ -303,6 +306,7 @@ else:
 	
 	
 # data cleaning
+print('data cleaning')
 # 0. remove leading and trailing 0s in observed data (replace by nans)
 wpUSIhs[wpUSIhs.fillna(0).cumsum(axis=0)==0] = np.nan # remove leading 0s
 wpUSIhs[wpUSIhs[::-1].fillna(0).cumsum(axis=0)[::-1]==0] = np.nan # remove trailing 0s
@@ -376,7 +380,9 @@ matches2Hlc = matches2Hl.set_index('ONS_name').drop(cfUSIhl.columns[((cfUSIhl>1)
 
 
 # calculate statistics
+print('analyse results')
 # Usinas
+print('wind parks')
 def analyseUSIh(parks):
     compUSIh= pd.DataFrame({'MERRA2':wpMER[parks.ANL_name],
                             'ERA5':wpERA[parks.ANL_name],
@@ -460,6 +466,7 @@ stats_USIh.to_csv(results_path + '/stats_USIh.csv')
 stats_USId.to_csv(results_path + '/stats_USId.csv')
 stats_USIm.to_csv(results_path + '/stats_USIm.csv')
 # States
+print('states')
 # insert states in matches dataframes
 matches2Hs['state'] = matches2Hs.ANL_name.map(ANL.groupby('name').state.first()).values
 matches2Hlc['state'] = matches2Hlc.ANL_name.map(ANL.groupby('name').state.first()).values
@@ -579,6 +586,7 @@ stats_ESTh.to_csv(results_path + '/stats_ESTh.csv')
 stats_ESTd.to_csv(results_path + '/stats_ESTd.csv')
 stats_ESTm.to_csv(results_path + '/stats_ESTm.csv')
 # Brazil
+print('Brazil')
 def analyseBRAh(usinas):
     # remove leading and trailing 0s in observed data
     wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
@@ -693,6 +701,7 @@ stats_BRAd.to_csv(results_path + '/stats_BRAd.csv')
 stats_BRAm.to_csv(results_path + '/stats_BRAm.csv')
 
 # merge results and save
+print('merge results and save')
 sUSIh = stats_USIh.reset_index().melt(id_vars=['param','dataset'], value_vars=stats_USIh.columns, var_name='location')
 sUSIh['temp'] = 'h'
 sUSIh['scale'] = 'park'
