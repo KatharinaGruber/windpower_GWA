@@ -10,7 +10,9 @@ import glob
 import numpy as np
 import os
 from calendar import monthrange
+import subprocess
 
+max_number_retries = 10
 
 def download_month(date, lon1, lat1, lon2, lat2, var, user, password, outpath):
     '''
@@ -71,12 +73,23 @@ def download_month(date, lon1, lat1, lon2, lat2, var, user, password, outpath):
     else:
         print('I do not know the dataset number yet...')
         exit()
-
+    
+    #fl = 0
+    #while fl < len(dates):
     for date in dates:
         if outpath + '/MERRA2_' + ds + '.tavg1_2d_slv_Nx.' + date + '.nc4.nc' not in glob.glob(outpath + '/*'):
             print('downloading ' + date)
-            os.system('wget -q --content-disposition --user ' + user + ' --password ' +
-                      password + ' https://goldsmr4.gesdisc.eosdis.nasa.gov/' +
-                      'opendap/MERRA2/M2T1NXSLV.5.12.4/' + y + '/' + m + '/MERRA2_' + ds +
-                      '.tavg1_2d_slv_Nx.' + date + '.nc4.nc?' + vstr + ',time,lat[' + x1 +
-                      ':' + x2 + '],lon[' + y1 + ':' + y2 + ']')
+            for i in range(max_number_retries):
+                r = os.system('wget -q --content-disposition --user ' + user + ' --password ' +
+                #subprocess.check_call('wget -q --content-disposition --user ' + user + ' --password ' +
+                          password + ' https://goldsmr4.gesdisc.eosdis.nasa.gov/' +
+                          'opendap/MERRA2/M2T1NXSLV.5.12.4/' + y + '/' + m + '/MERRA2_' + ds +
+                          '.tavg1_2d_slv_Nx.' + date + '.nc4.nc4?' + vstr + ',time,lat[' + x1 +
+                          ':' + x2 + '],lon[' + y1 + ':' + y2 + ']')
+                if r==0:
+                    break
+                else:
+                    print('retry ' + str(i) + ' downloading ' + date)
+                if (r!=0)&(i==(max_number_retries-1)):
+                    print('download ' + date + ' failed!')
+        #fl = len(glob.glob(outpath + '/MERRA2_' + ds + '.tavg1_2d_slv_Nx.' + y + m + '??.nc4.nc'))
