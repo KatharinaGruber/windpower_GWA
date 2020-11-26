@@ -47,10 +47,11 @@ def prep_gen(loc,prod_NZts):
     prod_loch = prod_loc.prod_kW.resample('H').sum()
     return(prod_loch)
 
-def rm_constTS(wpt,lim=24):
+def rm_constTS(wpt,lim=120):
     '''
     function for removing constant parts of time series
-     all series of more than lim (standard: 24 (hours))
+     all series of more than lim (standard: 120 (hours)
+     because longest timeseries of 0 generation in simulated data was ca 120 h)
      are removed from the dataset
     '''
     wpt1 = wpt.copy(deep=True)
