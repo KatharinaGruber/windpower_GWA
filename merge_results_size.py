@@ -27,6 +27,7 @@ results_USA_tidy.scale = results_USA_tidy.scale.replace({'subsystem':'state'})
 # filter regions with bad observed time series (filtered by visual inspection)
 bad_states = ['CT','MA','IL','RI','VT','OH','NJ','DE','NC']
 bad_states = ['CT','MA','IL','RI','VT','OH','NJ','DE','NC','NE','MI','WI','TN','ND','SD','AK']
+bad_states = ['AK','CT','DE','IL','NC','SD','TN']
 bad_regions = ['NewEng','ESC','PacNon']
 # filter bad regions
 results_USA_tidy = results_USA_tidy.set_index(['country','region']).drop(list(zip(['USA']*len(bad_regions),bad_regions)),axis=0).reset_index()
@@ -73,9 +74,6 @@ def merge_res_ss(sys_size,results,id_cols):
      results: results of statistical analysis in tidy format
      id_cols: columns in sys_size and results used to match the data
     '''
-    # calculate "system size" as number between 0 and 1 by divinding by largest number of grid cells per dataset (country)
-    sys_size.loc[sys_size.dataset=='MERRA2','cor'] = sys_size.cor[sys_size.dataset=='MERRA2']/sys_size.cor[sys_size.dataset=='MERRA2'].max()
-    sys_size.loc[sys_size.dataset=='ERA5','cor'] = sys_size.cor[sys_size.dataset=='ERA5']/sys_size.cor[sys_size.dataset=='ERA5'].max()
     # add size parameter to results dataframe
     # extract dataset only without GWA
     results['ds'] = results.dataset
