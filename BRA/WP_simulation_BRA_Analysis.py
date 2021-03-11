@@ -34,6 +34,7 @@ if GWA == "2":
     results_path = results_path + '/results_GWA2'
 
 
+
 # load generation data
 print('load generation data')
 # load usinas hourly
@@ -318,65 +319,96 @@ matches2H = matches2.copy(deep=True) # get matching hourly windparks
 matches2H = matches2H[[usi in wpUSIhs.columns.values for usi in matches2.ONS_name]]
 matches2.to_pickle(bra_path + '/matches2.pkl') # save matches
 matches2H.to_pickle(bra_path + '/matches2H.pkl')
-# 2. remove constant timeseries from observed data
+
+# 2. select only matching time series with a matching score of 100 (70)
+wpUSIhsm = wpUSIhs[matches2H.ONS_name[matches2H.score==100].values]
+
+# 3. remove constant timeseries from observed data
 def rm_constTS(wpt,lim=24):
     '''
     function for removing constant parts of time series
      all series of more than lim (standard: 24 (hours))
      are removed from the dataset
     '''
-    wpt1 = wpt.copy(deep=True)
-    wpt1.index = wpt.index - np.timedelta64(1,'h')
+    i = pd.DatetimeIndex(start=wpt.index[0],end=wpt.index[-1],freq='h')
+    wpt1 = pd.Series(i.map(wpt).copy(deep=True),index=i)
+    wpt2 = wpt1.copy(deep=True)
+    wpt2.index = wpt1.index - np.timedelta64(1,'h')
     # starts of constant timeseries
-    s = np.where((((wpt-wpt1).values[1:]==0).astype(int)-
-              ((wpt-wpt1).values[:-1]==0).astype(int))==1)[0]
+    s = np.where((((wpt1-wpt2).values[1:]==0).astype(int)-
+              ((wpt1-wpt2).values[:-1]==0).astype(int))==1)[0]
     # ends of constant timeseries
-    e = np.where((((wpt-wpt1).values[1:]==0).astype(int)-
-              ((wpt-wpt1).values[:-1]==0).astype(int))==-1)[0]
+    e = np.where((((wpt1-wpt2).values[1:]==0).astype(int)-
+              ((wpt1-wpt2).values[:-1]==0).astype(int))==-1)[0]
     # filter starts and ends of rows of constant that are longer than 24 hours
     sd = s[np.where((e-s)>lim)[0]]
     ed = e[np.where((e-s)>lim)[0]]
-    #return(len(sd))
+    sdpos = sd[wpt1[sd]>0]
+    edpos = ed[wpt1[ed]>0]
     rmdf = pd.Series(0,index=wpt.index)
-    for i in range(len(sd)):
-        rmdf.iloc[sd[i]:ed[i]] = 1
+    for i in range(len(sdpos)):
+        rmdf[wpt1.index[sdpos[i]]:wpt1.index[edpos[i]]] = 1
     return(wpt.where(rmdf==0))
-wpUSIh = wpUSIhs.apply(rm_constTS,axis=0).tz_localize('America/Bahia',ambiguous=False) # part of data removed in 150 of 174 windparks
-# 3. separate short time series
-# get short time series (less than 2 years)
-USIhs = wpUSIh[wpUSIh.columns[wpUSIh.notna().sum(axis=0)<8760*2].values]
-matches2Hs = matches2H[[usi in USIhs.columns.values for usi in matches2H.ONS_name.values]]
-# get long time series (at least 2 years)
-USIhl = wpUSIh.drop(wpUSIh.columns[wpUSIh.notna().sum(axis=0)<8760*2].values,axis=1)
-matches2Hl = matches2H[[usi in USIhl.columns.values for usi in matches2H.ONS_name.values]]
-# 4. find CFs > 1
+def rm_const0(wpt,lim=180):
+    '''
+    function for removing constant parts of time series
+     all series of more than lim (standard: 24 (hours))
+     are removed from the dataset
+    '''
+    i = pd.DatetimeIndex(start=wpt.index[0],end=wpt.index[-1],freq='h')
+    wpt1 = pd.Series(i.map(wpt).copy(deep=True),index=i)
+    wpt2 = wpt1.copy(deep=True)
+    wpt2.index = wpt1.index - np.timedelta64(1,'h')
+    # starts of constant timeseries
+    s = np.where((((wpt1-wpt2).values[1:]==0).astype(int)-
+              ((wpt1-wpt2).values[:-1]==0).astype(int))==1)[0]
+    # ends of constant timeseries
+    e = np.where((((wpt1-wpt2).values[1:]==0).astype(int)-
+              ((wpt1-wpt2).values[:-1]==0).astype(int))==-1)[0]
+    # filter starts and ends of rows of constant that are longer than 24 hours
+    sd = s[np.where((e-s)>lim)[0]]
+    ed = e[np.where((e-s)>lim)[0]]
+    sdpos = sd[wpt1[sd]==0]
+    edpos = ed[wpt1[ed]==0]
+    rmdf = pd.Series(0,index=wpt.index)
+    for i in range(len(sdpos)):
+        rmdf[wpt1.index[sdpos[i]]:wpt1.index[edpos[i]]] = 1
+    return(wpt.where(rmdf==0))
+
+# 3.1 remove constant timeseries from observed data longer than 24 hours, except 0 constants
+wpUSIh = wpUSIhsm.apply(rm_constTS,axis=0) # in 50 time series constant series longer than 24 hours are removed
+
+# 3.2 remove constant timeseries of 0 generation from observed data longer than 180 hours (approx. longest series of 0 production in ERA5 simulation)
+wpUSIh0 = wpUSIh.apply(rm_const0,axis=0).tz_localize('America/Bahia',ambiguous=False) # in 28 time series constant 0 generation longer than 180 hours is removed
+
+# 4. remove capacity factors > 1 from observed data
 def gcdH(park):
     cap = ANL[ANL.name==park].cap.values
     com = ANL[ANL.name==park].commissioning.astype(np.datetime64).values
     return(get_cap_df(cap,com).tz_localize('UTC').tz_convert('America/Bahia'))
 # prepare/load capacities
 if gen_path+'/usi_capH_filterONS.pkl' not in glob.glob(gen_path + '/*'):
-    t1 = datetime.datetime.now()
     capdf = pd.Series(ANL.name.unique()).apply(gcdH)
-    t2 = datetime.datetime.now()
-    print(t2-t1)
     capdf.index = ANL.name.unique()
     capdfH = capdf.transpose()
     capdfH.to_pickle(gen_path+'/usi_capH_filterONS.pkl')
 capdfH = pd.read_pickle(gen_path+'/usi_capH_filterONS.pkl')
 # get capacities of matching time series
-capUSIhs = capdfH[matches2Hs.ANL_name]
-capUSIhl = capdfH[matches2Hl.ANL_name]
+capUSIh = capdfH[matches2H[matches2H.score==100].ANL_name]
 # adapt names
-capUSIhs.columns = matches2Hs.ONS_name.values
-capUSIhl.columns = matches2Hl.ONS_name.values
+capUSIh.columns = matches2H[matches2H.score==100].ONS_name.values
 # calculate capacity factors
-cfUSIhs = (USIhs[matches2Hs.ONS_name]/(capUSIhs/10**6))
-cfUSIhl = (USIhl[matches2Hl.ONS_name]/(capUSIhl/10**6))
-# 12 parks where there are more than 10 days of CFs > 1 in hourly data (11 with matching score 100)
-# remove those bad parks and for other with just a few CFs > 1 replace those CFs with nans (happens in statistics calculation function)
-USIhlc = USIhl.drop(cfUSIhl.columns[((cfUSIhl>1).sum(axis=0)>10*24)].values,axis=1)
-matches2Hlc = matches2Hl.set_index('ONS_name').drop(cfUSIhl.columns[((cfUSIhl>1).sum(axis=0)>10*24)].values).reset_index() # remove also from matching data
+cfUSIh0 = (wpUSIh0/(capUSIh/10**6))
+
+# remove CF > 1 time steps
+wpUSIh0c = wpUSIh0.copy(deep=True)
+wpUSIh0c[cfUSIh0.isna()] = np.nan # 50 wind parks affected
+
+# 5. remove short time series (less than 2 years)
+USIh0cl = wpUSIh0c.drop(wpUSIh0c.columns[wpUSIh0c.notna().sum(axis=0)<8760*2].values,axis=1) # 17 windparks removed
+matches2Hl = matches2H[[usi in USIh0cl.columns.values for usi in matches2H.ONS_name.values]]
+matches2Hl.to_pickle(bra_path + '/matches2Hl.pkl')
+
 
 
 # calculate statistics
@@ -388,7 +420,7 @@ def analyseUSIh(parks):
                             'ERA5':wpERA[parks.ANL_name],
                             'MERRA2_GWA':wpMERg[parks.ANL_name],
                             'ERA5_GWA':wpERAg[parks.ANL_name],
-                            'wp_obs':wpUSIh[parks.ONS_name]*10**6})
+                            'wp_obs':USIh0cl[parks.ONS_name]*10**6})
     # get capacities
     capUSIh = capdfH[parks.ANL_name]
     # calculate capacity factors
@@ -410,7 +442,7 @@ def analyseUSId(parks):
                             'ERA5':wpERA[parks.ANL_name],
                             'MERRA2_GWA':wpMERg[parks.ANL_name],
                             'ERA5_GWA':wpERAg[parks.ANL_name],
-                            'wp_obs':wpUSIh[parks.ONS_name]*10**6})
+                            'wp_obs':USIh0cl[parks.ONS_name]*10**6})
     # get capacities and mask
     capUSIh = capdfH[parks.ANL_name].where(compUSIh.wp_obs.notna(),np.nan)
     # mask
@@ -437,7 +469,7 @@ def analyseUSIm(parks):
                             'ERA5':wpERA[parks.ANL_name],
                             'MERRA2_GWA':wpMERg[parks.ANL_name],
                             'ERA5_GWA':wpERAg[parks.ANL_name],
-                            'wp_obs':wpUSIh[parks.ONS_name]*10**6})
+                            'wp_obs':USIh0cl[parks.ONS_name]*10**6})
     # get capacities and mask
     capUSIh = capdfH[parks.ANL_name].where(compUSIh.wp_obs.notna(),np.nan)
     # mask
@@ -459,26 +491,25 @@ def analyseUSIm(parks):
                           index = ['cor','rmse','mbe','avg']).reset_index().melt(id_vars=['index']).dropna()
     stat_m.columns = ['param','dataset',parks.ANL_name]
     return(stat_m.set_index(['param','dataset']).transpose())
-stats_USIh = pd.concat(matches2Hlc[matches2Hlc.score==100].apply(analyseUSIh,axis=1).tolist(),axis=0).transpose().dropna(axis=1)
-stats_USId = pd.concat(matches2Hlc[matches2Hlc.score==100].apply(analyseUSId,axis=1).tolist(),axis=0).transpose().dropna(axis=1)
-stats_USIm = pd.concat(matches2Hlc[matches2Hlc.score==100].apply(analyseUSIm,axis=1).tolist(),axis=0).transpose().dropna(axis=1)
+
+stats_USIh = pd.concat(matches2Hl.apply(analyseUSIh,axis=1).tolist(),axis=0).transpose().dropna(axis=1)
+stats_USId = pd.concat(matches2Hl.apply(analyseUSId,axis=1).tolist(),axis=0).transpose().dropna(axis=1)
+stats_USIm = pd.concat(matches2Hl.apply(analyseUSIm,axis=1).tolist(),axis=0).transpose().dropna(axis=1)
 stats_USIh.to_csv(results_path + '/stats_USIh.csv')
 stats_USId.to_csv(results_path + '/stats_USId.csv')
 stats_USIm.to_csv(results_path + '/stats_USIm.csv')
 # States
 print('states')
 # insert states in matches dataframes
-matches2Hs['state'] = matches2Hs.ANL_name.map(ANL.groupby('name').state.first()).values
-matches2Hlc['state'] = matches2Hlc.ANL_name.map(ANL.groupby('name').state.first()).values
-matches2Hlc.to_pickle(bra_path + '/matches2Hlc.pkl')
+matches2Hl['state'] = matches2Hl.ANL_name.map(ANL.groupby('name').state.first()).values
 def analyseESTh(usinas):
     # remove leading and trailing 0s in observed data
-    wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
+    wpobs = USIh0cl[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
     wpobs[wpobs.cumsum(axis=0)==0] = np.nan
     wpobs[wpobs[::-1].cumsum(axis=0)[::-1]==0] = np.nan
     # mask for masking simulated data and capacities
     # (to only use timespans where also observed data are available)
-    mask = wpUSIh[usinas.ONS_name.values].notna()
+    mask = USIh0cl[usinas.ONS_name.values].notna()
     mask.columns = usinas.ANL_name.values
     # mask and aggregate simulated data
     wpMER_ESTh = (wpMER[usinas.ANL_name.values]*mask).sum(axis=1)
@@ -506,12 +537,12 @@ def analyseESTh(usinas):
     return(stat_h.set_index(['param','dataset']).transpose())
 def analyseESTd(usinas):
     # remove leading and trailing 0s in observed data
-    wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
+    wpobs = USIh0cl[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
     wpobs[wpobs.cumsum(axis=0)==0] = np.nan
     wpobs[wpobs[::-1].cumsum(axis=0)[::-1]==0] = np.nan
     # mask for masking simulated data and capacities
     # (to only use timespans where also observed data are available)
-    mask = wpUSIh[usinas.ONS_name.values].notna()
+    mask = USIh0cl[usinas.ONS_name.values].notna()
     mask.columns = usinas.ANL_name.values
     # mask and aggregate simulated data
     wpMER_ESTh = (wpMER[usinas.ANL_name.values]*mask).sum(axis=1)
@@ -542,12 +573,12 @@ def analyseESTd(usinas):
     return(stat_d.set_index(['param','dataset']).transpose())
 def analyseESTm(usinas):
     # remove leading and trailing 0s in observed data
-    wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
+    wpobs = USIh0cl[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
     wpobs[wpobs.cumsum(axis=0)==0] = np.nan
     wpobs[wpobs[::-1].cumsum(axis=0)[::-1]==0] = np.nan
     # mask for masking simulated data and capacities
     # (to only use timespans where also observed data are available)
-    mask = wpUSIh[usinas.ONS_name.values].notna()
+    mask = USIh0cl[usinas.ONS_name.values].notna()
     mask.columns = usinas.ANL_name.values
     # mask and aggregate simulated data
     wpMER_ESTh = (wpMER[usinas.ANL_name.values]*mask).sum(axis=1)
@@ -576,11 +607,12 @@ def analyseESTm(usinas):
                           index = ['cor','rmse','mbe','avg']).reset_index().melt(id_vars=['index']).dropna()
     stat_m.columns = ['param','dataset',usinas.state.values[0]]
     return(stat_m.set_index(['param','dataset']).transpose())
-stats_ESTh = matches2Hlc[matches2Hlc.score==100].groupby('state').apply(analyseESTh).transpose()
+
+stats_ESTh = matches2Hl.groupby('state').apply(analyseESTh).transpose()
 stats_ESTh.columns = stats_ESTh.columns.get_level_values(0).values
-stats_ESTd = matches2Hlc[matches2Hlc.score==100].groupby('state').apply(analyseESTd).transpose()
+stats_ESTd = matches2Hl.groupby('state').apply(analyseESTd).transpose()
 stats_ESTd.columns = stats_ESTd.columns.get_level_values(0).values
-stats_ESTm = matches2Hlc[matches2Hlc.score==100].groupby('state').apply(analyseESTm).transpose()
+stats_ESTm = matches2Hl.groupby('state').apply(analyseESTm).transpose()
 stats_ESTm.columns = stats_ESTm.columns.get_level_values(0).values
 stats_ESTh.to_csv(results_path + '/stats_ESTh.csv')
 stats_ESTd.to_csv(results_path + '/stats_ESTd.csv')
@@ -589,12 +621,12 @@ stats_ESTm.to_csv(results_path + '/stats_ESTm.csv')
 print('Brazil')
 def analyseBRAh(usinas):
     # remove leading and trailing 0s in observed data
-    wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
+    wpobs = USIh0cl[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
     wpobs[wpobs.cumsum(axis=0)==0] = np.nan
     wpobs[wpobs[::-1].cumsum(axis=0)[::-1]==0] = np.nan
     # mask for masking simulated data and capacities
     # (to only use timespans where also observed data are available)
-    mask = wpUSIh[usinas.ONS_name.values].notna()
+    mask = USIh0cl[usinas.ONS_name.values].notna()
     mask.columns = usinas.ANL_name.values
     # mask and aggregate simulated data
     wpMER_BRAh = (wpMER[usinas.ANL_name.values]*mask).sum(axis=1)
@@ -622,12 +654,12 @@ def analyseBRAh(usinas):
     return(stat_h.set_index(['param','dataset']).transpose())
 def analyseBRAd(usinas):
     # remove leading and trailing 0s in observed data
-    wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
+    wpobs = USIh0cl[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
     wpobs[wpobs.cumsum(axis=0)==0] = np.nan
     wpobs[wpobs[::-1].cumsum(axis=0)[::-1]==0] = np.nan
     # mask for masking simulated data and capacities
     # (to only use timespans where also observed data are available)
-    mask = wpUSIh[usinas.ONS_name.values].notna()
+    mask = USIh0cl[usinas.ONS_name.values].notna()
     mask.columns = usinas.ANL_name.values
     # mask and aggregate simulated data
     wpMER_BRAh = (wpMER[usinas.ANL_name.values]*mask).sum(axis=1)
@@ -656,15 +688,14 @@ def analyseBRAd(usinas):
                           index = ['cor','rmse','mbe','avg']).reset_index().melt(id_vars=['index']).dropna()
     stat_d.columns = ['param','dataset','BRA']
     return(stat_d.set_index(['param','dataset']).transpose())
-
 def analyseBRAm(usinas):
     # remove leading and trailing 0s in observed data
-    wpobs = wpUSIh[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
+    wpobs = USIh0cl[usinas.ONS_name.values].sum(axis=1).copy(deep=True)
     wpobs[wpobs.cumsum(axis=0)==0] = np.nan
     wpobs[wpobs[::-1].cumsum(axis=0)[::-1]==0] = np.nan
     # mask for masking simulated data and capacities
     # (to only use timespans where also observed data are available)
-    mask = wpUSIh[usinas.ONS_name.values].notna()
+    mask = USIh0cl[usinas.ONS_name.values].notna()
     mask.columns = usinas.ANL_name.values
     # mask and aggregate simulated data
     wpMER_BRAh = (wpMER[usinas.ANL_name.values]*mask).sum(axis=1)
@@ -693,9 +724,9 @@ def analyseBRAm(usinas):
                           index = ['cor','rmse','mbe','avg']).reset_index().melt(id_vars=['index']).dropna()
     stat_m.columns = ['param','dataset','BRA']
     return(stat_m.set_index(['param','dataset']).transpose())
-stats_BRAh = analyseBRAh(matches2Hlc[matches2Hlc.score==100]).transpose()
-stats_BRAd = analyseBRAd(matches2Hlc[matches2Hlc.score==100]).transpose()
-stats_BRAm = analyseBRAm(matches2Hlc[matches2Hlc.score==100]).transpose()
+stats_BRAh = analyseBRAh(matches2Hl).transpose()
+stats_BRAd = analyseBRAd(matches2Hl).transpose()
+stats_BRAm = analyseBRAm(matches2Hl).transpose()
 stats_BRAh.to_csv(results_path + '/stats_BRAh.csv')
 stats_BRAd.to_csv(results_path + '/stats_BRAd.csv')
 stats_BRAm.to_csv(results_path + '/stats_BRAm.csv')
