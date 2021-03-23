@@ -1,8 +1,8 @@
 # windpower_GWA
-scripts for simulating wind power generation from era5 data with Global Wind Atlas bias correction and validation with wind power time series.
+scripts for simulating wind power generation from ERA5 and MERRA-2 reanalysis data with Global Wind Atlas version 2 and 3 bias correction and validation with wind power time series.
 
 
-The results of Austria and Brazil were presented at the IEWT 2019 (Internationale Energiewirtschaftstagung 13.-15.Feb 2019, Vienna)
+The results of Austria (outdated) and Brazil were presented at the IEWT 2019 (Internationale Energiewirtschaftstagung 13.-15.Feb 2019, Vienna)
 https://iewt2019.eeg.tuwien.ac.at/programme_text
 Full Paper: https://iewt2019.eeg.tuwien.ac.at/download/contribution/fullpaper/146/146_fullpaper_20190130_090240.pdf
 Version: https://github.com/KatharinaGruber/windpower_GWA/tree/iewt
@@ -18,24 +18,37 @@ Link to ICEM abstract: http://icem2019-abstract-submission.p.wemc.currinda.com/d
 Link to presentation: doi.org/10.13140/RG.2.2.14639.79520
 Version: https://github.com/KatharinaGruber/windpower_GWA/tree/icem
 
-Note that there is an issue: Two different resolutions are used in the GWA as it was updated in the meantime: 1km for Austria and Brazil and 250m for South Africa and USA
+Simulation and analysis of wind power generation in Brazil, New Zealand, USA and South Africa is performed in Python.
+The scripts
+BRA/run_bra_simulation.sh
+NZ/run_NZ_simulation.sh
+USA/run_usa_simulation.sh
+ZAF/run_ZAF_simulation.sh
+run the simulation for each country.
 
-Simulation for Austria and Brazil is done in R:
+Each simulation consists of
+- reanalysis data download (ERA5 and MERRA-2)
+- wind power simulation for each of the reanalysis with and without GWA
+- for the GWA simulation between GWA2 and GWA3 can be chosen
+- computation of statistical parameters for simulation
+
+GWA needs to be downloaded manually, as well as wind park information data and validation data
+More information can be found in the related publication (Preprint) https://arxiv.org/abs/2012.05648
+
+
+
+------
+Info for Austria (outdated):
+
+Note that there was an issue: Two different resolutions are used in the GWA as it was updated in the meantime: 1km for Austria and Brazil and 250m for South Africa and USA
+More recent simulations are using GWA2 and GWA3, both with a resolution of 250m
+
+Simulation for Austria was done in R:
 
 the files "RSkript_aut_3.R" and "RSkript_bra_3.R" contain the main part of the simulation and analysis, including download
 the files "ERA5_data.R" and "ERA5_dat_bra.R" contain functions for the download and file conversion of ERA5 wind speed data, the latter is used for Brazil, because the method applied for Austria did not work for Brazil due to larger file sizes
 in "functions_aut_2.R" and "functions_bra_2.R" the functions used for simulation and analysis are contained
 in "RSkript_bra_country_monthly.R" and "RSkript_bra_states.R" further analysis for ICEM results is conducted
 
-The simulation for South Africa is done in Python:
-data for South Africa are downloaded with "download_merra_ZAF.R" and "era5_download_zaf.py"
-the files " WP_simulation_ZAF_ERA5.ipynb" and "WP_simulation_ZAF_MERRA2.ipynb" contain the simulation and analysis of wind power generation for South Africa
-the wind park information is in "./data/windparks_southafrica.csv"
-
-The simulation for the USA is done in Python:
-Reanalysis data for the USA are downloaded with "download_merra2_USA.R" and "download_era5_USA.py"
-In "WP_simulation_USA_ERA5.ipynb" and "WP_simulation_USA_MERRA2.ipynb" wind power in the USA is simulated
-The analysis is in "WP_simulation_USA_Analysis.ipynb"
-"utils" contains functions for the simulation and analysis of wind power generation in the USA
-
-"logging_confic.py" and "config.py" are needed for the download of ERA5 data
+------
+We gratefully acknowledge support from the European Research Council (“reFUEL” ERC2017-STG 758149).
